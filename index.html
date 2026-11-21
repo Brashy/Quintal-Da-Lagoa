@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1f1a18">
+<title>Comandas do salão</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: rápido e firme — ferramenta de salão usada com uma mão, no meio do movimento
+   IDEA: a comanda de papel do garçom e o calor da brasa do espetinho
+   PICTURE: o mapa de mesas é a própria imagem; a conta fechada vira um cupom de papel
+   COLOUR and TYPE: coral da brasa (o mesmo do cardápio), carvão, amarelo do cardápio marcando o 10%; Barlow Condensed + Barlow
+   LAYOUT: coluna única de celular, barra fixa embaixo, cardápio e fechamento em folhas de tela cheia */
+:root{color-scheme:light dark;
+--bg:light-dark(#f5f1ee,#161312);--card:light-dark(#fff,#221d1b);--ink:light-dark(#1f1a18,#f3ece8);
+--mute:light-dark(#6c605b,#a99d97);--line:light-dark(#e5ddd8,#382f2b);--soft:light-dark(#efe8e4,#2b2421);
+--okc:light-dark(#1d7a4a,#5fd39a);--paid:light-dark(#eef7f1,#17271e);--embsoft:light-dark(#fbe3dd,#3a1f19);--ember:#d9472f;--ember2:light-dark(#b8361f,#ff7a5f);--coal:#1f1a18;--sun:#ffd23f;--sunink:#2b2100;--bad:light-dark(#b42318,#ff8a80)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 Barlow,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-x:clip;padding-bottom:calc(86px + env(safe-area-inset-bottom))}
+body.inmesa{padding-bottom:calc(214px + env(safe-area-inset-bottom))}
+body.lock{overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+button:disabled{opacity:.4;cursor:default}
+:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+svg{width:22px;height:22px;flex:none}
+.wrap{max-width:680px;margin:0 auto;padding:0 16px}
+.cd,h1,h2,h3{font-family:"Barlow Condensed",Barlow,system-ui,sans-serif;font-weight:700}
+.top{position:sticky;top:0;z-index:5;background:var(--coal);color:#fff;padding:calc(8px + env(safe-area-inset-top)) 0 10px}
+.top .wrap{display:flex;align-items:center;gap:10px;min-height:48px}
+.ttl{flex:1}.ttl small{display:block;font-size:13px;color:#c9bcb6;line-height:1.2}
+.ttl h1{margin:0;font-size:32px;line-height:1.05}
+.ib{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:#ffffff17;color:#fff}
+.clock{font:600 20px "Barlow Condensed",sans-serif;color:#c9bcb6}
+.band{background:var(--ember);color:#fff;padding:14px 0 16px}
+.stats{display:flex;gap:12px 32px;flex-wrap:wrap}
+.stats b{display:block;font:700 30px/1.05 "Barlow Condensed",sans-serif;white-space:nowrap}
+.stats span{font-size:14px;color:#ffe3dc}
+.hint{font-size:14px;color:var(--mute);margin:16px 0 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px;padding:12px 0 20px}
+.mesa{min-height:98px;border-radius:16px;background:var(--card);border:2px dashed var(--line);display:flex;flex-direction:column;align-items:flex-start;padding:9px 11px;text-align:left;gap:0}
+.mesa .lb{font-size:12px;color:var(--mute)}
+.mesa .n{font:700 36px/1 "Barlow Condensed",sans-serif;margin-bottom:auto}
+.mesa .s{font-size:13px;color:var(--mute);white-space:nowrap}
+.mesa.on{background:var(--ember);color:#fff;border:2px solid var(--ember);box-shadow:0 8px 18px -10px #d9472fcc}
+.mesa.on .lb,.mesa.on .s{color:#ffe3dc}
+.mesa.addm{align-items:center;justify-content:center;gap:6px;border-color:var(--ember);color:var(--ember2);background:transparent}
+.mesa.addm svg{width:30px;height:30px}.mesa.addm .s{color:var(--ember2);font-weight:600}
+.mesa .v{font:700 18px/1.1 "Barlow Condensed",sans-serif;white-space:nowrap}
+.empty{text-align:center;padding:48px 12px;color:var(--mute)}
+.empty .big{font:700 64px/1 "Barlow Condensed",sans-serif;color:var(--line);margin-bottom:6px}
+.lines{display:flex;flex-direction:column;gap:8px;padding:14px 0}
+.line{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px 12px 6px 6px}
+.step{display:flex;align-items:center;background:var(--soft);border-radius:12px}
+.step button{width:38px;height:44px;display:grid;place-items:center}
+.step svg{width:18px;height:18px}
+.step b{min-width:20px;text-align:center;font:700 21px "Barlow Condensed",sans-serif}
+.nmb{text-align:left;padding:4px 0;min-height:44px}
+.nm{display:block;font-weight:600;line-height:1.25}
+.sl{display:block;font-size:12px;color:var(--mute)}
+.ob{display:block;font-size:13px;color:var(--ember2);font-weight:600}
+.obh{display:block;font-size:13px;color:var(--mute)}
+.pr{font:700 19px "Barlow Condensed",sans-serif;white-space:nowrap;text-align:right}
+.pr small{display:block;font:400 12px Barlow,sans-serif;color:var(--mute)}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--card);border-top:1px solid var(--line);padding:10px 0 calc(10px + env(safe-area-inset-bottom));box-shadow:0 -10px 24px -18px #0006}
+.tot{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-bottom:10px}
+.tot span{display:block;font-size:13px;color:var(--mute)}
+.tot b{font:700 26px/1.05 "Barlow Condensed",sans-serif;white-space:nowrap}
+.tot .r{text-align:right}
+.hl{background:var(--sun);color:var(--sunink);border-radius:8px;padding:0 7px}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{min-height:52px;border-radius:14px;font:700 19px "Barlow Condensed",sans-serif;padding:0 14px;display:flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap}
+.btn.pri{background:var(--ember);color:#fff}.btn.sun{background:var(--sun);color:var(--sunink)}
+.btn.gh{border:2px solid var(--line)}.btn.bad{background:var(--bad);color:#fff}
+#fechOk{font-size:18px;padding:0 8px}
+.seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;background:var(--soft);border-radius:14px;padding:4px;margin:12px 0}
+.seg button{min-height:46px;border-radius:10px;font-weight:600;font-size:15px;line-height:1.1}
+.seg button.on{background:var(--ember);color:#fff}
+.part,.pc{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:8px 0}
+.part.paid,.pc.paid{background:var(--paid);border-color:var(--okc)}
+.pays.sm{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:8px}.pays.sm .pay{min-height:40px;padding:0 4px;font-size:14px}
+.pv{font:700 24px "Barlow Condensed",sans-serif;white-space:nowrap}
+.ppbar{position:sticky;top:0;z-index:2;background:var(--bg);margin:0 -16px;padding:8px 16px;border-bottom:1px solid var(--line)}
+.pchips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.pchip{flex:none;height:42px;padding:0 14px;border-radius:999px;border:2px solid var(--line);font-weight:600;display:flex;align-items:center;gap:8px;white-space:nowrap;background:var(--card)}
+.pchip i,.who i,.pn i{width:10px;height:10px;border-radius:50%;background:var(--pc);display:inline-block;flex:none}
+.pchip.on{background:var(--pc);border-color:var(--pc);color:#fff}.pchip.on i{background:#fff}
+.pchip.padd{border-style:dashed;background:transparent}
+.ppst{font-size:14px;color:var(--mute);margin-top:6px;display:flex;flex-wrap:wrap;gap:2px 12px;align-items:center}
+.lnk2{color:var(--ember2);font-weight:600;min-height:32px}
+.si{padding:10px 0;border-bottom:1px solid var(--line)}.si:last-child{border:0}
+.sn b{display:block;font-weight:600}.sn>span{display:block;font-size:13px;color:var(--mute)}
+.who{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:13px;margin-top:3px}.who span{display:inline-flex;align-items:center;gap:5px}
+.sctl{display:flex;justify-content:space-between;align-items:center;margin-top:6px;gap:10px}
+.rem{font-size:14px;font-weight:700;color:var(--ember2)}.done{font-size:14px;font-weight:700;color:var(--okc)}
+.lnk.sm{min-height:38px;font-size:14px;margin-top:6px}
+.h3s{font-size:24px;margin:20px 0 4px}
+.pn{display:flex;align-items:center;gap:8px;font:700 21px "Barlow Condensed",sans-serif}
+.gar{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:14px}
+.gar>div{background:#00000022;border-radius:12px;padding:8px 10px}.gar span{display:block;font-size:13px;color:#ffe3dc}.gar b{display:block;font:700 22px/1.1 "Barlow Condensed",sans-serif}.gar small{font-size:12px;color:#ffe3dc}
+.lockband{padding:12px 0}.lockband span{font-size:15px;color:#ffe9e3}
+.lockb{min-height:40px;padding:0 14px;border-radius:999px;background:#00000030;color:#fff;font-weight:700;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}.lockb svg{width:18px;height:18px}
+.tk .real{display:none}.tk[open] .real{display:block}.tk[open] .mask{display:none}
+.mask{display:inline-flex;align-items:center;min-height:36px;padding:0 12px;border-radius:999px;background:var(--soft);color:var(--mute);font-size:14px;font-weight:600}
+.grpw{background:var(--card);border:1px solid var(--line);border-radius:16px;margin-top:14px;overflow:hidden}
+.grp+.grp{border-top:1px solid var(--line)}
+.grp>summary{list-style:none;display:flex;align-items:center;gap:12px;padding:12px 16px;min-height:62px;cursor:pointer}
+.grp>summary::-webkit-details-marker{display:none}
+.grp>summary div{flex:1}.grp>summary b{display:block;font-weight:600;font-size:17px}.grp>summary span{display:block;font-size:13px;color:var(--mute)}
+.grp>summary svg{color:var(--mute);transition:transform .2s}.grp[open]>summary svg{transform:rotate(90deg)}
+.gb{padding:0 16px 16px}
+.lockc{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px 18px 18px;margin-top:16px;text-align:center}.lockc svg{width:38px;height:38px;color:var(--ember2)}.lockc h3{margin:8px 0 4px;font-size:26px}
+#ntf{position:fixed;left:50%;transform:translateX(-50%);top:calc(8px + env(safe-area-inset-top));z-index:60;display:flex;flex-direction:column;gap:6px;width:min(460px,calc(100vw - 20px));pointer-events:none}
+.nt{pointer-events:auto;display:flex;gap:8px;align-items:baseline;text-align:left;background:var(--card);color:var(--ink);border:1px solid var(--line);border-left:0;border-radius:14px;padding:10px 14px;box-shadow:0 10px 26px -12px #000a;font-size:15px;animation:ntin .25s ease;min-height:44px}
+.nt b{flex:none;font:700 19px "Barlow Condensed",sans-serif;color:var(--ember2);white-space:nowrap}
+.nt.long{background:var(--sun);color:var(--sunink);border-color:var(--sun)}.nt.long b{color:var(--sunink)}
+@keyframes ntin{from{transform:translateY(-10px);opacity:0}}
+@media (prefers-reduced-motion:reduce){.nt{animation:none}}
+.lvb{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 10px;border-radius:999px;font-size:13px;font-weight:700;background:#ffffff17;color:#fff;white-space:nowrap}
+.lvb i{width:8px;height:8px;border-radius:50%;background:#9a8f8a}
+.lvb.s-on i{background:#5fd39a;box-shadow:0 0 0 3px #5fd39a33}.lvb.s-conn i,.lvb.s-off2 i{background:var(--sun)}.lvb.s-err i,.lvb.s-deny i{background:#ff8a80}
+.box .lvb{background:var(--soft);color:var(--ink)}
+.live{border:1.5px solid var(--ember)}
+.fbhow{margin-top:16px;border-top:1px solid var(--line);padding-top:10px}.fbhow summary{cursor:pointer;min-height:40px;display:flex;align-items:center}
+.bandp{margin:0;font-size:15px;color:#fff}
+.okp{background:var(--paid);border:1.5px solid var(--okc);border-radius:16px;padding:14px;margin:12px 0}
+.warnp{background:light-dark(#fff4e0,#33260f);color:light-dark(#7a4b00,#ffcf7a);border-radius:12px;padding:8px 12px;font-size:14px;margin:6px 0}
+.prev{margin-top:14px;border-top:1.5px dashed var(--line);padding-top:12px}.prev>p{margin:0 0 8px}
+.lg{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}
+.tg{flex:none;font-size:12px;font-weight:700;border-radius:6px;padding:2px 7px;margin-top:1px;white-space:nowrap}
+.t-new{background:var(--paid);color:var(--okc)}.t-upd{background:var(--embsoft);color:var(--ember2)}.t-off{background:var(--soft);color:var(--mute)}.t-warn{background:var(--sun);color:var(--sunink)}
+.how{margin:8px 0 0;padding-left:20px;font-size:15px}.how li{margin:6px 0}
+details.box summary{cursor:pointer;min-height:32px;display:flex;align-items:center}
+.byo{font-weight:700;color:var(--ember2)}
+.btn.zap{background:#25d366;color:#06290d;text-decoration:none}
+.kbar{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;min-height:52px;padding:0 6px 0 14px;margin-bottom:8px;border-radius:14px;background:var(--coal);color:#fff;text-align:left;font-size:15px;border:1px solid #ffffff22}
+.kbar b{font-weight:700}
+.kgo{background:#25d366;color:#06290d;border-radius:10px;padding:0 14px;min-height:40px;display:grid;place-items:center;font:700 18px "Barlow Condensed",sans-serif;white-space:nowrap}
+.kn{display:inline-block;font-size:12px;font-weight:700;color:#fff;background:var(--ember);border-radius:6px;padding:0 6px;margin:3px 0 1px}
+.ks{display:block;font-size:12px;color:var(--mute)}
+.btn.wide{width:100%;justify-content:space-between}
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--coal);padding:6px 8px calc(6px + env(safe-area-inset-bottom))}
+.nav .wrap{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:0}
+.nav button{color:#bdb0aa;min-height:54px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:13px;font-weight:600;border-radius:12px}
+.nav button[aria-current]{color:#fff;background:#ffffff14}
+.nav button[aria-current] svg{color:var(--sun)}
+body.inmesa .nav{display:none}
+.sheet{position:fixed;inset:0;z-index:20;background:var(--bg);display:flex;flex-direction:column;transform:translateY(100%);visibility:hidden;transition:transform .22s ease,visibility 0s .22s}
+.sheet.open{transform:none;visibility:visible;transition:transform .22s ease}
+@media (prefers-reduced-motion:reduce){.sheet,.sheet.open{transition:none}.qc b.pop{animation:none}}
+.sheet>header{background:var(--coal);color:#fff;padding:calc(8px + env(safe-area-inset-top)) 0 0}
+.sheet>header .row{display:flex;align-items:center;gap:10px;min-height:52px}
+.sheet h2{margin:0;font-size:28px;line-height:1.05;flex:1}
+.sbody{flex:1;overflow-y:auto;overscroll-behavior:contain;position:relative}
+.sheet>footer{background:var(--card);border-top:1px solid var(--line);padding:10px 0 calc(10px + env(safe-area-inset-bottom))}
+.srch{position:relative;margin:4px 0 0}
+.srch svg{position:absolute;left:12px;top:12px;color:#a99d97}
+.srch input{width:100%;height:48px;border-radius:12px;border:0;padding:0 14px 0 42px;font:16px Barlow,sans-serif;background:#ffffff18;color:#fff}
+.srch input::placeholder{color:#a99d97}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:10px 16px 12px;scrollbar-width:none;max-width:680px;margin:0 auto}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;min-height:40px;padding:0 14px;border-radius:999px;background:#ffffff17;color:#fff;font-size:15px;font-weight:600;white-space:nowrap}
+.chip.on{background:var(--ember)}.chip.alt{background:transparent;border:1.5px dashed #ffffff55}
+.sec{padding-top:6px}
+.sec h3{font-size:26px;line-height:1.1;margin:18px 0 2px}
+.note{margin:0 0 6px;font-size:14px;color:var(--mute)}
+.it{display:flex;align-items:center;border-bottom:1px solid var(--line)}
+.add{flex:1;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;text-align:left;min-height:58px}
+.add .c{font-size:12px;font-weight:600;color:var(--mute);margin-right:6px}
+.add .n{font-weight:600;font-size:17px}
+.add .d{display:block;font-size:13px;color:var(--mute);line-height:1.3}
+.add .x{display:block;font-size:13px;color:var(--bad);font-weight:600}
+.add .p{font:700 19px "Barlow Condensed",sans-serif;white-space:nowrap}
+.it.off .add{opacity:.5}
+.qc{display:none;align-items:center;margin-left:6px}
+.it.has .qc{display:flex}
+.qc button{width:40px;height:44px;display:grid;place-items:center;color:var(--mute)}
+.qc svg{width:18px;height:18px}
+.qc b{min-width:34px;height:34px;padding:0 6px;border-radius:10px;background:var(--ember);color:#fff;display:grid;place-items:center;font:700 19px "Barlow Condensed",sans-serif}
+.qc b.pop{animation:pop .25s ease}
+@keyframes pop{50%{transform:scale(1.25)}}
+.rcpt{background:#fff;color:#1f1a18;border-radius:14px 14px 0 0;padding:16px 16px 18px;margin:16px 0 22px;position:relative;font-size:15px;box-shadow:0 10px 24px -18px #0008}
+.rcpt::after{content:"";position:absolute;left:0;right:0;bottom:-10px;height:10px;background:radial-gradient(circle at 8px 0,#fff 7.5px,transparent 8px) 0 0/16px 10px repeat-x}
+.rcpt h3{margin:0;font-size:24px}.rcpt .meta{font-size:13px;color:#6c605b;margin-bottom:10px}
+.rr{display:flex;justify-content:space-between;gap:12px;padding:3px 0}
+.rr>span:last-child{white-space:nowrap;font-variant-numeric:tabular-nums}
+.rs{font-size:12px;color:#8a7f7a;white-space:nowrap}
+.rr em{display:block;font-size:13px;color:#b8361f;font-style:normal}
+.rr.sep{border-top:1.5px dashed #cfc5c0;margin-top:8px;padding-top:9px}
+.rr.big{font:700 22px "Barlow Condensed",sans-serif}
+.rr.off{color:#9a8f8a;text-decoration:line-through}
+.vals{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.val{border-radius:16px;padding:12px 14px;background:var(--card);border:2px solid var(--line)}
+.val span{display:block;font-size:14px;color:var(--mute)}
+.val b{font:700 clamp(25px,7.5vw,34px)/1.1 "Barlow Condensed",sans-serif;white-space:nowrap}
+.val.hi{background:var(--sun);border-color:var(--sun);color:var(--sunink)}.val.hi span{color:#5b4800}
+.box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0}
+.box h3{margin:0 0 8px;font-size:22px}
+.tog{display:flex;align-items:center;gap:12px;min-height:48px;font-weight:600}
+.tog input{width:26px;height:26px;accent-color:var(--ember)}
+.rowc{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.pp{font-size:14px;color:var(--mute);margin-top:6px}
+.pays{display:flex;gap:8px;flex-wrap:wrap}
+.pay{min-height:44px;padding:0 16px;border-radius:999px;border:2px solid var(--line);font-weight:600}
+.pay.on{background:var(--coal);border-color:var(--coal);color:#fff}
+.sum3{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:14px}
+.sum3 b{display:block;font:700 clamp(21px,6vw,30px)/1.05 "Barlow Condensed",sans-serif;white-space:nowrap}
+.sum3 span{font-size:13px;color:#ffe3dc}
+.day{display:flex;justify-content:space-between;align-items:baseline;margin:22px 0 6px;gap:10px}
+.day h3{margin:0;font-size:24px}.day span{font-size:14px;color:var(--mute);white-space:nowrap}
+.tk{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:8px}
+.tk summary{list-style:none;display:flex;justify-content:space-between;gap:10px;padding:12px 14px;cursor:pointer;min-height:56px}
+.tk summary::-webkit-details-marker{display:none}
+.tk summary b{font:700 21px/1.1 "Barlow Condensed",sans-serif;white-space:nowrap}
+.tk summary span{display:block;font-size:13px;color:var(--mute)}
+.tk .r{text-align:right}
+.tkb{padding:0 14px 14px;font-size:15px}
+.tkb .btn{margin-top:10px;width:100%}
+.fld{margin:10px 0}
+.fld label{display:block;font-size:14px;color:var(--mute);margin-bottom:4px}
+.fld input,.fld textarea,.er input[type=text],.er input[inputmode]{width:100%;height:48px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font:16px Barlow,sans-serif;padding:0 12px}
+.fld textarea{height:auto;min-height:90px;padding:10px 12px;resize:vertical}
+.cnt{display:flex;align-items:center;gap:4px;background:var(--soft);border-radius:12px}
+.cnt button{width:44px;height:44px;display:grid;place-items:center}
+.cnt b{min-width:36px;text-align:center;font:700 22px "Barlow Condensed",sans-serif}
+.ed summary{display:flex;justify-content:space-between;align-items:center;min-height:52px;font:700 21px "Barlow Condensed",sans-serif;cursor:pointer;border-bottom:1px solid var(--line)}
+.ed summary span{font:400 13px Barlow,sans-serif;color:var(--mute)}
+.er{display:grid;grid-template-columns:minmax(0,1fr) auto 44px;gap:6px 10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.er input[type=text]{grid-column:1/-1}
+.er label{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--mute);white-space:nowrap;min-height:44px}
+.er input[inputmode]{text-align:right;padding:0 10px;max-width:130px}
+.er input[type=checkbox]{width:24px;height:24px;margin:0;accent-color:var(--ember)}
+.er .ib2{width:40px;height:44px;display:grid;place-items:center;color:var(--mute)}
+.edx{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 4px}
+.lnk{min-height:44px;padding:0 12px;border-radius:12px;border:1.5px solid var(--line);font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.lnk.bad{color:var(--bad)}
+.small{font-size:14px;color:var(--mute);margin:4px 0 10px}
+.dlg{position:fixed;inset:0;z-index:40;background:#000a;display:none;align-items:flex-end;justify-content:center;padding:12px}
+.dlg.open{display:flex}
+.dbox{background:var(--card);color:var(--ink);width:100%;max-width:480px;border-radius:20px;padding:18px;margin-bottom:env(safe-area-inset-bottom);max-height:88vh;overflow-y:auto}
+.dbox h2{margin:0 0 6px;font-size:28px;line-height:1.1}
+.dbox p{margin:0 0 10px;color:var(--mute)}
+.dbtn{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.qchips{display:flex;gap:6px;flex-wrap:wrap}
+.qchips button{min-height:38px;padding:0 12px;border-radius:999px;background:var(--soft);font-size:14px;font-weight:600}
+.pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px;margin-top:8px}
+.pick button{min-height:56px;border-radius:12px;border:2px dashed var(--line);font:700 24px "Barlow Condensed",sans-serif;line-height:1}
+.pick button.on{border:2px solid var(--ember);color:var(--ember2)}
+.pick small{display:block;font:600 11px Barlow,sans-serif}
+.opt{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:0 6px;border-bottom:1px solid var(--line);font-weight:600;text-align:left}
+.opt.bad{color:var(--bad);border:0}
+#toast span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#toast{border:1px solid #ffffff22;position:fixed;left:50%;bottom:calc(100px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;pointer-events:none;z-index:50;background:var(--coal);color:#fff;border-radius:14px;padding:10px 10px 10px 16px;display:flex;align-items:center;gap:12px;font-weight:600;transition:.2s;max-width:calc(100vw - 24px);box-shadow:0 10px 24px -10px #000a}
+#toast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+#toast button{color:var(--sun);min-height:40px;padding:0 10px;font-weight:700}
+#toast button[hidden]{display:none}
+textarea.cp{width:100%;min-height:200px;font:14px/1.4 ui-monospace,monospace;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);padding:10px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<nav class="nav" aria-label="Seções do app"><div class="wrap">
+  <button data-act="nav" data-v="mesas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg>Mesas</button>
+  <button data-act="nav" data-v="hist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>Fechadas</button>
+  <button data-act="nav" data-v="sync"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9a8 8 0 0 1 14-4l2 2M20 15a8 8 0 0 1-14 4l-2-2"/><path d="M20 3v4h-4M4 21v-4h4"/></svg>Sincronizar</button>
+  <button data-act="nav" data-v="ajustes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Ajustes</button>
+</div></nav>
+
+<section class="sheet" id="pick" aria-label="Cardápio">
+  <header>
+    <div class="wrap">
+      <div class="row"><h2 id="pickTitle">Mesa</h2><button class="btn sun" data-act="pickDone" style="min-height:44px">Pronto</button></div>
+      <div class="srch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4-4"/></svg><input id="q" type="search" placeholder="Buscar item ou número" autocomplete="off" aria-label="Buscar no cardápio"></div>
+    </div>
+    <div class="chips" id="chips"></div>
+  </header>
+  <div class="sbody" id="pickBody"><div class="wrap" id="pickList"></div><div style="height:24px"></div></div>
+  <footer><div class="wrap"><button class="btn pri wide" data-act="pickDone" id="pickBar">Ver comanda</button></div></footer>
+</section>
+
+<section class="sheet" id="fech" aria-label="Fechar conta">
+  <header><div class="wrap"><div class="row" style="padding-bottom:8px"><button class="ib" data-act="fechX" aria-label="Voltar para a comanda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><h2 id="fechTitle">Fechar conta</h2></div></div></header>
+  <div class="sbody"><div class="wrap" id="fechBody"></div><div style="height:16px"></div></div>
+  <footer><div class="wrap btns" style="grid-template-columns:.7fr 1.3fr"><button class="btn gh" data-act="copyBill">Copiar</button><button class="btn pri" data-act="confirmClose" id="fechOk">Fechar mesa</button></div></footer>
+</section>
+
+<div class="dlg" id="dlg" role="dialog" aria-modal="true"><div class="dbox" id="dlgBox"></div></div>
+<div id="ntf" aria-live="polite"></div>
+<div id="toast" role="status"><span id="toastT"></span><button data-act="undo" hidden>Desfazer</button></div>
+
+<script>
+{
+const KEY='comandas-salao-v1';
+const LKEY='comandas-live-v1';
+let LV=(()=>{try{return JSON.parse(localStorage.getItem(LKEY))||{}}catch(e){return{}}})();
+let R=null,ES=null,LST='off',inflight=false,again=false,pushT=0,retryT=0,presT=0,recT=0,firstLoad=true,actx=null,LVINV='',LVU='';
+const BASE=[
+['Almoço e jantinha','Todos os pratos acompanham arroz, feijão, vinagrete, farofa, molho de alho e batata.',[['01','Cordão do filé mignon',3599],['02','Linguiça suína',3199],['03','Linguiça mineira',3299],['04','Linguiça apimentada',3390],['05','Kafta com queijo',3399],['06','Kafta',3290],['07','Peito de frango',3199],['08','Medalhão de frango',3699],['09','Coração',3299],['10','Queijo coalho',3190],['11','Medalhão de carne',3899],['12','Sobrecoxa',3295],['13','Cuiabana suína',3399],['14','Panceta',3299],['15','Cupim com queijo',3599]]],
+['Executivos','Almoço executivo.',[['21','Parmegiana de frango',4599,'Filé à parmegiana, arroz e fritas · 1 pessoa'],['22','Parmegiana de carne',5199,'Filé à parmegiana, arroz e fritas · 1 pessoa'],['23','Contrafilé',4999,'Arroz, feijão, vinagrete e fritas · 1 pessoa'],['24','Costela no bafo',18599,'Arroz, fritas, vinagrete e feijão tropeiro · 2 pessoas']]],
+['Espetinhos','Espetinhos individuais.',[['25','Cordão do mignon',1790],['26','Medalhão de carne',1899],['27','Medalhão de frango',1799],['28','Peito de frango',1399],['29','Linguiça mineira',1450],['30','Linguiça suína',1390],['31','Linguiça apimentada',1450],['32','Sobrecoxa',1299],['33','Kafta',1450],['34','Kafta com queijo',1499],['35','Coração',1490],['36','Panceta',1495],['37','Linguiça cuiabana',1450],['38','Queijo coalho',1190],['39','Queijo coalho com melaço',1390],['40','Pão de alho',1099],['41','Medalhão de mandioca',1590],['42','Cupim com queijo',2190],['91','Medalhão Romeu e Julieta',1890]]],
+['Lanches da casa','Pão francês com espetinho.',[['58','Lanche de cordão de mignon',4399,'2 espetos, vinagrete e queijo'],['59','Lanche de linguiça suína',3590,'Vinagrete e queijo'],['60','Lanche de peito de frango',3790,'2 espetos, vinagrete e queijo'],['61','Lanche de coração',3990,'2 espetos, vinagrete e queijo']]],
+['Porções','',[['43','Batata frita pequena',1499],['44','Arroz',1100],['45','Pão',600],['46','Feijão',1000],['47','Feijão tropeiro',3699],['48','Isca de frango empanada',4690],['49','Mandioca frita',2599],['50','Batata frita com cheddar e bacon',4290],['51','Batata frita',3399],['52','Isca de tilápia empanada',7499],['53','Calabresa acebolada',4399],['54','Torresmo de panceta',6390],['55','Contrafilé acebolado',8599],['56','Costela no bafo na chapa',15000,'Com batata frita e mandioca frita'],['57','Picanha na chapa',17999,'Com batata frita e mandioca frita']]],
+['Adicionais','',[['16','Vinagrete',400],['17','Farofa',350],['18','Molho de alho',500]]],
+['Cervejas 600 ml','',[['83','Heineken',2190],['84','Spaten',1799],['85','Original',1750],['86','Brahma',1599]]],
+['Long neck e chopp','',[['76','Heineken',1490],['77','Heineken Zero',1590],['78','Corona Extra',1599],['79','Ice',1399],['','Chopp Germânia',599]]],
+['Doses','',[['80','Whisky Red Label',2590],['81','Vodka Smirnoff',1790],['82','Cachaça Velho Barreiro',1200]]],
+['Caipirinhas','',[['72','Caipirosca Smirnoff de limão',2890],['73','Caipirosca Smirnoff de morango',2990],['74','Caipirinha Velho Barreiro de limão',2750],['75','Caipirinha Velho Barreiro de morango',2990]]],
+['Refrigerantes e água','',[['62','Coca-Cola KS',850],['63','Coca-Cola lata',900],['64','Coca-Cola Zero',900],['65','Fanta Laranja',900],['66','Fanta Uva',900],['67','Sprite',900],['68','Guaraná Antarctica',900],['69','Tônica',900],['70','Água',600],['71','Água com gás',600]]],
+['Sucos','',[['87','Del Valle uva',900],['88','Del Valle pêssego',900],['89','Suco natural de laranja',1600],['90','Suco de polpa de abacaxi',1500],['','Suco de polpa de limão',1400]]]];
+const OBS=['Ao ponto','Bem passado','Mal passado','Sem cebola','Sem vinagrete','Sem gelo','Com gelo e limão','Para viagem'];
+const PAYS=['Pix','Dinheiro','Débito','Crédito'];
+const ic=p=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+const I={plus:ic('<path d="M12 5v14M5 12h14"/>'),minus:ic('<path d="M5 12h14"/>'),back:ic('<path d="M15 5l-7 7 7 7"/>'),more:ic('<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'),x:ic('<path d="M6 6l12 12M18 6L6 18"/>'),chev:ic('<path d="M9 6l6 6-6 6"/>'),lock:ic('<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'),swap:ic('<path d="M4 8h14l-3-3M20 16H6l3 3"/>'),trash:ic('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>')};
+
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=c=>(c/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const brl=c=>'R$ '+num(c);
+const parseBRL=v=>{v=String(v).trim().replace(/[^\d,.]/g,'');if(!v)return NaN;if(v.includes(','))v=v.replace(/\./g,'').replace(',','.');return Math.round(parseFloat(v)*100)};
+const norm=s=>String(s).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+const hhmm=t=>new Date(t).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+const dayKey=t=>new Date(t).toLocaleDateString('pt-BR');
+const ago=t=>{const m=Math.floor((Date.now()-t)/60000);if(m<1)return'agora';if(m<60)return m+' min';return Math.floor(m/60)+'h'+String(m%60).padStart(2,'0')};
+const buzz=()=>{try{navigator.vibrate&&navigator.vibrate(12)}catch(e){}};
+
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const DRINK=new Set(['Cervejas 600 ml','Long neck','Long neck e chopp','Chopp','Doses','Caipirinhas','Refrigerantes e água','Sucos']);
+const buildMenu=()=>BASE.map(([t,note,its])=>({t,note,kz:!DRINK.has(t),items:its.map(([c,n,p,d])=>({id:'d'+(c||norm(n).replace(/[^a-z0-9]+/g,'-')),c,n,p,d:d||'',on:true}))}));
+const MV=5;
+const PIN_DEF='47760fdf';
+const defaults=()=>({mv:MV,pin:PIN_DEF,did:'',dev:'',gone:{},hgone:{},sync:null,name:'Quintal da Lagoa',zap:'',mesas:20,pct:10,menu:buildMenu(),orders:{},hist:[]});
+function migrate(o){if((o.mv||1)<2&&!o.menu.some(s=>s.items.some(i=>i.id==='dchopp-germania'))){const it={id:'dchopp-germania',c:'',n:'Chopp Germânia',p:599,d:'',on:true};const sec=o.menu.find(s=>s.t==='Long neck');if(sec){sec.t='Long neck e chopp';sec.items.push(it)}else o.menu.push({t:'Chopp',note:'',items:[it]})}if((o.mv||1)<3)o.menu.forEach(s=>{if(s.kz===undefined)s.kz=!DRINK.has(s.t)});if((o.mv||1)<4)o.pin=PIN_DEF;if((o.mv||1)<5&&!o.name)o.name='Quintal da Lagoa';o.mv=MV;return o}
+function load(){try{const r=localStorage.getItem(KEY);if(r){const o=JSON.parse(r);if(o&&Array.isArray(o.menu))return Object.assign(defaults(),migrate(o))}}catch(e){}return defaults()}
+let S=load();
+let saveOk=true;
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));saveOk=true}catch(e){saveOk=false}if(LV.on&&R)schedPush()}
+{const cut=Date.now()-3*864e5;for(const k in S.gone)if(S.gone[k].t<cut)delete S.gone[k];for(const k in S.hgone)if(S.hgone[k]<cut)delete S.hgone[k];if(!S.did){S.did=uid();save()}}
+function ens(o){if(!o.id)o.id=uid();if(!o.mt)o.mt=o.t||1;o.del=o.del||{};o.items.forEach(l=>{if(!l.u)l.u=uid();if(!l.ts)l.ts=o.t||1;if(!l.bd)l.bd=S.did})}
+const ids=o=>[o.id,...(o.ali||[])].filter(Boolean);
+function markGone(o,b){ens(o);ids(o).forEach(i=>S.gone[i]={t:Date.now(),b:b||null})}
+
+let view='mesas',cur=null,F={mode:'all',svc:true,pay:'',n:2,parts:[],people:[],shr:[],cur:0},D={ok:null},SH=null,undoSnap=null;
+const openSecs=new Set();
+let unlocked=false,ajOk=false;const grpOpen=new Set();
+const hashPin=v=>{let h=2166136261;for(const c of 'cmd-salao:'+v){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return(h>>>0).toString(16)};
+function pinDlg(title,msg,fn){dlg(`<h2>${title}</h2><p>${msg}</p><div class="fld"><input id="pinI" type="password" inputmode="numeric" autocomplete="off" maxlength="8" data-focus aria-label="Senha" style="font-size:24px;letter-spacing:6px;text-align:center"></div><p id="ferr" style="color:var(--bad)"></p><div class="dbtn"><button class="btn gh" data-act="dlgNo">Cancelar</button><button class="btn pri" data-act="dlgOk">Ok</button></div>`,
+  ()=>{const v=$('#pinI').value.trim();if(hashPin(v)!==S.pin){$('#ferr').textContent='Senha errada.';$('#pinI').value='';$('#pinI').focus();return false}fn()})}
+const guard=fn=>S.pin?pinDlg('Senha do dono','Digite a senha para continuar.',fn):fn();
+const subOf=o=>o?o.items.reduce((a,l)=>a+l.p*l.q,0):0;
+const qtyOf=o=>o?o.items.reduce((a,l)=>a+l.q,0):0;
+const svc=c=>Math.round(c*S.pct/100);
+const qtyIn=(m,id)=>{const o=S.orders[m];return o?o.items.filter(l=>l.id===id).reduce((a,l)=>a+l.q,0):0};
+const findItem=id=>{for(const s of S.menu)for(const i of s.items)if(i.id===id)return[i,s];return[]};
+const tidy=m=>{const o=S.orders[m];if(o&&!o.items.length){markGone(o,null);delete S.orders[m]}};
+function addLine(m,it,sec){let o=S.orders[m];const now=Date.now();if(!o)o=S.orders[m]={id:uid(),t:now,mt:now,items:[],del:{}};const l=o.items.find(x=>x.id===it.id&&!x.o&&(!x.bd||x.bd===S.did));if(l){l.q++;l.ts=now}else o.items.push({u:uid(),id:it.id,n:it.n,s:sec.t,z:sec.kz!==false,p:it.p,q:1,o:'',k:0,ts:now,bd:S.did,by:S.dev||''});save()}
+const isK=l=>l.z!==undefined?l.z:((findItem(l.id)[1]||{}).kz!==false);
+const pend=l=>isK(l)?l.q-(l.k||0):0;
+function rmLine(o,k){const l=o.items[k];if(l.u)(o.del=o.del||{})[l.u]=Date.now();if((l.k||0)>0&&isK(l))(o.cx=o.cx||[]).push({n:l.n,s:l.s,q:l.k,o:l.o});o.items.splice(k,1)}
+function kTicket(full){const o=S.orders[cur];if(!o)return'';const add=[],can=[];
+  o.items.forEach(l=>{if(!isK(l))return;const d=full?l.q:l.q-(l.k||0);if(d>0)add.push([d,l]);else if(d<0)can.push([-d,l])});
+  if(!full)(o.cx||[]).forEach(c=>can.push([c.q,c]));
+  if(!add.length&&!can.length)return'';
+  const sent=o.items.some(l=>isK(l)&&(l.k||0)>0)||(o.cx||[]).length;
+  const fmt=([q,l])=>`${q}x ${l.n} (${l.s})${l.o?`\n    obs: ${l.o}`:''}`;
+  return [`*MESA ${cur}* · ${full?'pedido completo':sent?'acréscimo':'pedido'} · ${hhmm(Date.now())}`,'',...add.map(fmt),...(can.length&&!full?['','*CANCELAR*',...can.map(fmt)]:[])].join('\n')}
+function markSent(){const o=S.orders[cur];if(!o)return;o.items.forEach(l=>{if(isK(l)&&l.k!==l.q){l.k=l.q;l.ts=Date.now()}});o.cx=[];save()}
+const waHref=t=>`https://wa.me/${S.zap||''}?text=${encodeURIComponent(t)}`;
+function kitchenDlg(full){const t=kTicket(full);
+  if(!t){const any=kTicket(true);dlg(`<h2>Cozinha · mesa ${cur}</h2><p>${any?'Nada novo: tudo dessa mesa já foi enviado.':'Essa mesa não tem itens que vão para a cozinha.'}</p><div class="dbtn"><button class="btn gh" data-act="dlgNo">Fechar</button>${any?'<button class="btn pri" data-act="kFull">Mandar completo</button>':'<span></span>'}</div>`);return}
+  dlg(`<h2>Para a cozinha · mesa ${cur}</h2><p>Confira e mande. Dá para mexer no texto.</p><textarea class="cp" id="kT">${esc(t)}</textarea>
+  <div class="dbtn"><button class="btn gh" data-act="kCopy">Copiar</button><a class="btn zap" id="kWa" href="${esc(waHref(t))}" target="_blank" rel="noopener" data-act="kWa">WhatsApp</a></div>
+  <div class="edx">${full?'':'<button class="lnk" data-act="kFull">Pedido completo</button>'}<button class="lnk" data-act="kMark">Já avisei, marcar enviado</button><button class="lnk" data-act="dlgNo">Cancelar</button></div>`)}
+function decLine(m,id){const o=S.orders[m];if(!o)return;for(let k=o.items.length-1;k>=0;k--){const l=o.items[k];if(l.id===id){l.q--;l.ts=Date.now();if(l.q<=0)rmLine(o,k);break}}tidy(m);save()}
+const snap=()=>{undoSnap=JSON.stringify(S)};
+
+function toast(t,undo){const el=$('#toast');$('#toastT').textContent=t;el.querySelector('button').hidden=!undo;el.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>{el.classList.remove('on');undoSnap=null},undo?5000:1800)}
+function dlg(html,ok){$('#dlgBox').innerHTML=html;$('#dlg').classList.add('open');D.ok=ok||null;setTimeout(()=>{const f=$('#dlgBox [data-focus]');if(f){f.focus();if(f.select)f.select()}},60)}
+function closeDlg(){$('#dlg').classList.remove('open');D.ok=null}
+function ask(title,text,okLabel,bad,fn){dlg(`<h2>${title}</h2><p>${text}</p><div class="dbtn"><button class="btn gh" data-act="dlgNo">Voltar</button><button class="btn ${bad?'bad':'pri'}" data-act="dlgOk">${okLabel}</button></div>`,fn)}
+function showText(title,txt){dlg(`<h2>${title}</h2><p>Selecione o texto e copie.</p><textarea class="cp" readonly data-focus>${esc(txt)}</textarea><div class="dbtn"><span></span><button class="btn pri" data-act="dlgNo">Ok</button></div>`)}
+function copy(txt,title,done){if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(()=>toast(done),()=>showText(title,txt))}else showText(title,txt)}
+const lock=()=>document.body.classList.toggle('lock',$('#pick').classList.contains('open')||$('#fech').classList.contains('open'));
+
+function head(title,sub,left,right){return `<header class="top"><div class="wrap">${left||''}<div class="ttl"><small>${esc(sub)}</small><h1>${title}</h1></div>${right||''}</div></header>`}
+
+function vMesas(){
+  const open=Object.keys(S.orders).filter(m=>S.orders[m].items.length).map(Number);
+  const tot=open.reduce((a,m)=>a+subOf(S.orders[m]),0);
+  const nums=new Set(Array.from({length:S.mesas},(_,i)=>i+1));open.forEach(m=>nums.add(m));
+  const tiles=[...nums].sort((a,b)=>a-b).map(m=>{const o=S.orders[m];
+    return o?`<button class="mesa on" data-act="mesa" data-m="${m}"><span class="lb">Mesa</span><span class="n">${m}</span><span class="v">${brl(subOf(o))}</span><span class="s">${qtyOf(o)} ${qtyOf(o)===1?'item':'itens'} · ${ago(o.t)}</span></button>`
+    :`<button class="mesa" data-act="mesa" data-m="${m}"><span class="lb">Mesa</span><span class="n">${m}</span><span class="s">livre</span></button>`}).join('');
+  const addT=`<button class="mesa addm" data-act="addMesa" aria-label="Criar mesa ${S.mesas+1}">${I.plus}<span class="s">Nova mesa</span></button>`;
+  return head('Mesas',(S.name||'Comandas')+(S.sync?` · trocou com ${S.sync.from} às ${hhmm(S.sync.t)}`:''),'',`${liveBadge()}<span class="clock">${hhmm(Date.now())}</span>`)+
+  `<div class="band"><div class="wrap stats"><div><b>${open.length}</b><span>${open.length===1?'mesa aberta':'mesas abertas'}</span></div><div><b>${brl(tot)}</b><span>em aberto · com ${S.pct}%: ${brl(tot+svc(tot))}</span></div></div></div>
+  <div class="wrap"><p class="hint">Toque numa mesa para abrir ou ver a comanda.</p><div class="grid">${tiles}${addT}</div></div>`;
+}
+
+function vMesa(){
+  const o=S.orders[cur],s=subOf(o);
+  const lines=o?o.items.map((l,k)=>`<div class="line"><div class="step"><button data-act="ldec" data-k="${k}" aria-label="Tirar um">${I.minus}</button><b>${l.q}</b><button data-act="linc" data-k="${k}" aria-label="Mais um">${I.plus}</button></div><button class="nmb" data-act="lobs" data-k="${k}"><span class="sl">${esc(l.s)}${l.bd&&l.bd!==S.did?` · <b class="byo">por ${esc(l.by||'outro celular')}</b>`:''}</span><span class="nm">${esc(l.n)}</span>${pend(l)>0?`<span class="kn">${pend(l)} p/ cozinha</span>`:isK(l)&&l.k?'<span class="ks">Na cozinha</span>':''}${l.o?`<span class="ob">${esc(l.o)}</span>`:'<span class="obh">+ observação</span>'}</button><div class="pr">${brl(l.p*l.q)}${l.q>1?`<small>${brl(l.p)} cada</small>`:''}</div></div>`).join(''):'';
+  return head('Mesa '+cur,o?`Aberta às ${hhmm(o.t)} · ${ago(o.t)}`:'Livre',`<button class="ib" data-act="back" aria-label="Voltar para as mesas">${I.back}</button>`,o?`<button class="ib" data-act="more" aria-label="Mais opções">${I.more}</button>`:'')+
+  `<div class="wrap">${o?`<div class="lines">${lines}</div>`:`<div class="empty"><div class="big">${cur}</div><p>Mesa livre. Toque em <b>Adicionar itens</b> para abrir a comanda.</p></div>`}</div>
+  <div class="bar"><div class="wrap"><div class="tot"><div><span>Sem ${S.pct}%</span><b>${brl(s)}</b></div><div class="r"><span>Com ${S.pct}% do garçom</span><b class="hl">${brl(s+svc(s))}</b></div></div>
+  ${(()=>{if(!o)return'';const n=o.items.reduce((a,l)=>a+Math.max(0,pend(l)),0),c=(o.cx||[]).length+o.items.filter(l=>pend(l)<0).length;return n||c?`<button class="kbar" data-act="kitchen"><span><b>${n?`${n} ${n===1?'item novo':'itens novos'}`:'Cancelamento'}</b> para a cozinha</span><span class="kgo">Enviar</span></button>`:''})()}
+  <div class="btns"><button class="btn pri" data-act="addItems">${I.plus} Adicionar</button><button class="btn sun" data-act="closeBill" ${o?'':'disabled'}>Fechar conta</button></div></div></div>`;
+}
+
+function vHist(){
+  const today=dayKey(Date.now()),yest=dayKey(Date.now()-864e5);
+  const td=S.hist.filter(h=>dayKey(h.t1)===today);
+  const vend=td.reduce((a,h)=>a+h.sub,0),g=td.reduce((a,h)=>a+h.svc,0);
+  const gname=h=>!h.bd||h.bd===S.did?(S.dev||'Este celular'):(h.by||'Outro celular');
+  const byG={};td.forEach(h=>{const k=gname(h);byG[k]=byG[k]||{s:0,n:0,v:0};byG[k].s+=h.svc;byG[k].n++;byG[k].v+=h.sub+h.svc});const gl=Object.entries(byG);
+  const groups={};[...S.hist].sort((a,b)=>b.t1-a.t1).forEach(h=>{(groups[dayKey(h.t1)]=groups[dayKey(h.t1)]||[]).push(h)});
+  const list=Object.entries(groups).map(([d,hs])=>{const tot=hs.reduce((a,h)=>a+h.sub+h.svc,0);
+    return `<div class="day"><h3>${d===today?'Hoje':d===yest?'Ontem':d}</h3><span>${hs.length} ${hs.length===1?'conta':'contas'}${unlocked?' · '+brl(tot):''}</span></div>`+
+    hs.map(h=>`<details class="tk"><summary><div><b>Mesa ${h.m}</b><span>${hhmm(h.t1)}${h.pay?' · '+esc(h.pay):''}${h.bd&&h.bd!==S.did?' · '+esc(h.by||'outro celular'):''}${h.ppl>1?` · ${h.ppl} pessoas`:''}</span></div><div class="r"><span class="mask">Ver valor</span><div class="real"><b>${brl(h.sub+h.svc)}</b><span>${h.svc?`${h.pct}% garçom: ${brl(h.svc)}`:`sem ${h.pct}%`}</span></div></div></summary>
+    <div class="tkb">${h.items.map(l=>`<div class="rr"><span>${l.q}× ${esc(l.n)} <small class="rs">${esc(l.s)}</small>${l.o?`<em>${esc(l.o)}</em>`:''}</span><span>${num(l.p*l.q)}</span></div>`).join('')}
+    ${h.parts?`<div class="rr sep"><span><b>${h.parts.length} pagamentos</b></span><span></span></div>${h.parts.map(x=>`<div class="rr"><span>${esc(x.n)}${x.pay?' · '+esc(x.pay):''}</span><span>${brl(x.v)}</span></div>`).join('')}`:''}<div class="rr sep"><span>Sem ${h.pct}%</span><span>${brl(h.sub)}</span></div><div class="rr"><span>Com ${h.pct}%</span><span>${brl(h.sub+svc0(h))}</span></div><div class="rr"><span>Aberta ${hhmm(h.t0)} · fechada ${hhmm(h.t1)}</span><span></span></div>
+    <button class="btn gh" data-act="reopen" data-id="${h.id}">Reabrir mesa ${h.m}</button></div></details>`).join('')}).join('');
+  return head('Fechadas',S.name||'Comandas')+
+  (unlocked?`<div class="band"><div class="wrap"><div class="rowc" style="margin-bottom:10px"><b>Totais de hoje</b><button class="lockb" data-act="lockT">Esconder</button></div><div class="sum3"><div><b>${brl(vend)}</b><span>vendas hoje, sem 10%</span></div><div><b>${brl(g)}</b><span>10% do garçom hoje</span></div><div><b>${brl(vend+g)}</b><span>recebido hoje</span></div></div>${gl.length>1?`<div class="gar">${gl.map(([k,x])=>`<div><span>${esc(k)}</span><b>${brl(x.s)}</b><small>10% · ${x.n} ${x.n===1?'conta':'contas'} · ${brl(x.v)}</small></div>`).join('')}</div>`:''}</div></div>`
+  :`<div class="band lockband"><div class="wrap rowc"><span>${td.length} ${td.length===1?'conta fechada':'contas fechadas'} hoje. Valores escondidos.</span><button class="lockb" data-act="unlockT">${I.lock} Ver totais</button></div></div>`)+
+  `<div class="wrap"><p class="small" style="margin-top:14px">Toque numa conta para ver o valor dela.</p>${list||'<div class="empty"><p>Nenhuma mesa fechada ainda.</p></div>'}${S.hist.length?'<div class="edx" style="margin:20px 0"><button class="lnk bad" data-act="clearHist">'+I.trash+' Limpar histórico</button></div>':''}</div>`;
+}
+const svc0=h=>Math.round(h.sub*h.pct/100);
+
+function vAjustes(){
+  const zapBox=`<div class="box"><h3>WhatsApp da cozinha</h3><div class="fld" style="margin:0"><input id="zp" inputmode="tel" data-set="zap" value="${esc(S.zap)}" placeholder="Com DDD, ex.: 19 99999-9999" aria-label="WhatsApp da cozinha"></div><p class="small" style="margin-top:6px">Os pedidos para a cozinha abrem direto nessa conversa. Vazio: você escolhe o contato ou grupo na hora.</p></div>`;
+  if(S.pin&&!ajOk)return head('Ajustes',S.name||'Comandas')+`<div class="wrap">${zapBox}<div class="lockc">${I.lock}<h3>Ajustes protegidos</h3><p class="small">Nome, preços, mesas, taxa do garçom, senha e backup só abrem com a senha do dono.</p><button class="btn pri" style="width:100%" data-act="ajUnlock">Digitar senha</button></div></div>`;
+  const secs=S.menu.map((s,si)=>`<details class="ed" data-sec="${si}" ${openSecs.has(si)?'open':''}><summary>${esc(s.t)}<span>${s.items.length} itens</span></summary>
+    <div class="fld"><label for="st${si}">Nome da seção</label><input id="st${si}" data-sf="t" data-s="${si}" value="${esc(s.t)}"></div><label class="tog"><input type="checkbox" data-sk="${si}" ${s.kz!==false?'checked':''}> Itens desta seção vão para a cozinha</label>
+    ${s.items.map((it,ii)=>`<div class="er"><input type="text" aria-label="Nome" data-f="n" data-s="${si}" data-i="${ii}" value="${esc(it.n)}"><input inputmode="decimal" aria-label="Preço de ${esc(it.n)}" data-f="p" data-s="${si}" data-i="${ii}" value="${num(it.p)}"><label><input type="checkbox" data-f="on" data-s="${si}" data-i="${ii}" ${it.on?'checked':''}> Disponível</label><button class="ib2" data-act="delItem" data-s="${si}" data-i="${ii}" aria-label="Excluir ${esc(it.n)}">${I.x}</button></div>`).join('')}
+    <div class="edx"><button class="lnk" data-act="newItem" data-s="${si}">${I.plus} Item</button><button class="lnk bad" data-act="delSec" data-s="${si}">Excluir seção</button></div></details>`).join('');
+  const nIt=S.menu.reduce((a,s)=>a+s.items.length,0),nOff=S.menu.reduce((a,s)=>a+s.items.filter(i=>!i.on).length,0);
+  const g=(k,t,sub,body)=>`<details class="grp" data-g="${k}" ${grpOpen.has(k)?'open':''}><summary><div><b>${t}</b><span>${sub}</span></div>${I.chev}</summary><div class="gb">${body}</div></details>`;
+  return head('Ajustes',S.name||'Comandas')+
+  `<div class="wrap">${saveOk?'':'<div class="box" style="border-color:var(--bad)"><b>Atenção:</b> este navegador não está deixando salvar. Os pedidos somem se a página fechar.</div>'}
+  ${zapBox}<div class="grpw">
+  ${g('est','Estabelecimento',esc(S.name||'Sem nome'),`<div class="fld"><label for="nm">Nome (aparece na conta e nos convites)</label><input id="nm" data-set="name" value="${esc(S.name)}" placeholder="Ex.: Quintal da Lagoa"></div>`)}
+  ${g('sal','Mesas e taxa',`${S.mesas} mesas · ${S.pct}% do garçom`,`<div class="rowc"><span>Mesas</span><div class="cnt"><button data-act="mesasDec" aria-label="Menos uma mesa">${I.minus}</button><b>${S.mesas}</b><button data-act="mesasInc" aria-label="Mais uma mesa">${I.plus}</button></div></div><div class="edx"><button class="lnk" data-act="mesas5">${I.plus} 5 mesas</button></div>
+  <div class="rowc" style="margin-top:10px"><span>Taxa do garçom (%)</span><div class="cnt"><button data-act="pctDec" aria-label="Diminuir taxa">${I.minus}</button><b>${S.pct}</b><button data-act="pctInc" aria-label="Aumentar taxa">${I.plus}</button></div></div>`)}
+  ${g('car','Cardápio',`${S.menu.length} seções · ${nIt} itens${nOff?` · ${nOff} em falta`:''}`,`<p class="small">Mude nome e preço direto no campo. Desmarque "Disponível" quando faltar.</p>${secs}<div class="edx"><button class="lnk" data-act="newSec">${I.plus} Nova seção</button><button class="lnk bad" data-act="resetMenu">Restaurar original</button></div>`)}
+  ${g('pin','Senha do dono',S.pin===PIN_DEF?'Usando a senha padrão':'Senha trocada',`<p class="small">A senha abre os Ajustes, os totais das Fechadas e o Limpar histórico.</p><div class="fld"><label for="pinN">Nova senha (4 a 8 números)</label><input id="pinN" type="password" inputmode="numeric" maxlength="8" autocomplete="off"></div><div class="fld"><label for="pinC">Repita a nova senha</label><input id="pinC" type="password" inputmode="numeric" maxlength="8" autocomplete="off"></div><button class="btn pri" style="width:100%" data-act="pinSet">Trocar senha</button>`)}
+  ${g('bk','Backup','Copiar ou restaurar tudo deste celular',`<p class="small">Copie um backup de vez em quando e guarde no WhatsApp ou nas notas.</p><div class="edx"><button class="lnk" data-act="bkCopy">Copiar backup</button><button class="lnk" data-act="bkLoad">Restaurar backup</button></div>`)}
+  </div><div class="edx" style="margin:16px 0"><button class="lnk" data-act="ajLock">${I.lock} Trancar ajustes</button></div></div>`;
+}
+function render(){
+  const app=$('#app');
+  app.innerHTML=view==='mesas'?vMesas():view==='mesa'?vMesa():view==='hist'?vHist():view==='sync'?vSync():vAjustes();
+  document.body.classList.toggle('inmesa',view==='mesa');
+  document.querySelectorAll('.nav [data-v]').forEach(b=>b.dataset.v===view?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current'));
+}
+
+/* ---- cardápio ---- */
+function itemRow(i,sec){const q=qtyIn(cur,i.id);
+  return `<div class="it${i.on?'':' off'}${q?' has':''}" data-id="${i.id}"><button class="add" data-act="add" data-id="${i.id}" ${i.on?'':'disabled'}><span>${i.c?`<span class="c">${esc(i.c)}</span>`:''}<span class="n">${esc(i.n)}</span>${i.d?`<span class="d">${esc(i.d)}</span>`:''}${i.on?'':'<span class="x">Em falta</span>'}</span><span class="p">${brl(i.p)}</span></button><div class="qc"><button data-act="pdec" data-id="${i.id}" aria-label="Tirar um ${esc(i.n)}">${I.minus}</button><b>${q}</b></div></div>`}
+function renderPick(){
+  const q=norm($('#q').value.trim());
+  let html='';
+  S.menu.forEach((s,si)=>{const its=s.items.filter(i=>!q||norm(`${i.c} ${i.n} ${i.d} ${s.t}`).includes(q));if(!its.length)return;
+    html+=`<section class="sec" id="sec${si}" data-si="${si}"><h3>${esc(s.t)}</h3>${s.note?`<p class="note">${esc(s.note)}</p>`:''}${its.map(i=>itemRow(i,s)).join('')}</section>`});
+  $('#pickList').innerHTML=(html||`<div class="empty"><p>Nada encontrado para “${esc($('#q').value)}”.</p></div>`)+`<div class="edx" style="margin-top:18px"><button class="lnk" data-act="avulso">${I.plus} Item avulso (fora do cardápio)</button></div>`;
+  $('#chips').innerHTML=S.menu.map((s,si)=>`<button class="chip" data-act="jump" data-s="${si}">${esc(s.t)}</button>`).join('')+`<button class="chip alt" data-act="avulso">+ Item avulso</button>`;
+  activeChip();
+}
+function pickBar(){const o=S.orders[cur];$('#pickBar').innerHTML=o?`<span>Ver comanda</span><span>${qtyOf(o)} ${qtyOf(o)===1?'item':'itens'} · ${brl(subOf(o))}</span>`:'<span>Voltar</span><span>nenhum item</span>'}
+function updRow(id,pop){const q=qtyIn(cur,id);document.querySelectorAll(`.it[data-id="${id}"]`).forEach(r=>{r.classList.toggle('has',q>0);const b=r.querySelector('.qc b');b.textContent=q;if(pop){b.classList.remove('pop');void b.offsetWidth;b.classList.add('pop')}});pickBar()}
+function openPick(){$('#pickTitle').textContent='Mesa '+cur;$('#q').value='';renderPick();pickBar();$('#pick').classList.add('open');$('#pickBody').scrollTop=0;lock()}
+function closePick(){$('#pick').classList.remove('open');lock();render()}
+function activeChip(){const body=$('#pickBody'),y=body.scrollTop+40;let act=null;document.querySelectorAll('#pickList .sec').forEach(s=>{if(s.offsetTop<=y)act=s.dataset.si});if(act===null){const f=$('#pickList .sec');act=f?f.dataset.si:null}
+  document.querySelectorAll('#chips .chip').forEach(c=>{const on=c.dataset.s===act;if(on&&!c.classList.contains('on')){c.classList.add('on');const cs=$('#chips');cs.scrollTo({left:c.offsetLeft-16,behavior:'smooth'})}else if(!on)c.classList.remove('on')})}
+
+/* ---- fechamento ---- */
+const PC=['#d9472f','#2e6f8e','#1d7a4a','#c27c0e','#8a4fb5','#b8366b','#4a5a68','#0f8b8d'];
+const mkP=i=>({id:uid(),n:'Pessoa '+(i+1),a:{},pay:''});
+const shrQ=u=>F.shr.filter(g=>g.u===u).reduce((a,g)=>a+g.q,0);
+function alloc(total,ws){const W=ws.reduce((a,b)=>a+b,0);if(!W||!total)return ws.map(()=>0);const raw=ws.map(w=>total*w/W),fl=raw.map(Math.floor);let r=total-fl.reduce((a,b)=>a+b,0);raw.map((x,i)=>[x-fl[i],i]).sort((a,b)=>b[0]-a[0]).forEach(([,i])=>{if(r>0){fl[i]++;r--}});return fl}
+function prepSplit(o){o.items.forEach(l=>{if(!l.u)l.u=uid()});
+  if(!o.sp)o.sp={mode:'all',svc:true,pay:'',n:2,parts:[],people:[mkP(0),mkP(1)],shr:[],cur:0};
+  F=o.sp;const byU={};o.items.forEach(l=>byU[l.u]=l);
+  F.people.forEach(p=>{if(!p.id)p.id=uid()});
+  if(!F.shr){F.shr=Object.entries(F.sh||{}).map(([u,q])=>({u,q,who:F.people.map(p=>p.id)}));delete F.sh}
+  const ids=new Set(F.people.map(p=>p.id));F.shr=F.shr.filter(g=>byU[g.u]&&g.q>0&&(g.who=g.who.filter(i=>ids.has(i))).length);
+  F.people.forEach(p=>{for(const u of Object.keys(p.a))if(!byU[u]||p.a[u]<=0)delete p.a[u]});
+  o.items.forEach(l=>{let over=F.people.reduce((a,p)=>a+(p.a[l.u]||0),0)+shrQ(l.u)-l.q;
+    for(let j=F.shr.length-1;j>=0&&over>0;j--){const g=F.shr[j];if(g.u!==l.u)continue;const d=Math.min(over,g.q);g.q-=d;over-=d;if(!g.q)F.shr.splice(j,1)}
+    for(let i=F.people.length-1;i>=0&&over>0;i--){const p=F.people[i],v=p.a[l.u]||0,d=Math.min(over,v);if(d){p.a[l.u]=v-d;over-=d;if(!p.a[l.u])delete p.a[l.u]}}});
+  if(F.cur>=F.people.length)F.cur=0}
+const remU=l=>l.q-F.people.reduce((a,p)=>a+(p.a[l.u]||0),0)-shrQ(l.u);
+function calcPeople(o){const byU={};o.items.forEach(l=>byU[l.u]=l);const P=F.people.length;
+  const own=F.people.map(p=>Object.entries(p.a).reduce((a,[u,q])=>a+(byU[u]?byU[u].p*q:0),0));
+  const shp=F.people.map(()=>0),shl=F.people.map(()=>[]);
+  F.shr.forEach(g=>{const l=byU[g.u];if(!l)return;const idx=g.who.map(id=>F.people.findIndex(p=>p.id===id)).filter(i=>i>=0);const v=alloc(l.p*g.q,idx.map(()=>1));idx.forEach((pi,k)=>{shp[pi]+=v[k];shl[pi].push({l,q:g.q,k:idx.length,v:v[k]})})});
+  const sub=own.map((v,i)=>v+shp[i]);const A=sub.reduce((a,b)=>a+b,0);
+  const sv=F.svc?alloc(svc(A),sub):sub.map(()=>0);return{sub,sv,shp,shl,A,left:subOf(o)-A}}
+function drawShare(){const l=S.orders[cur].items.find(x=>x.u===SH.u);if(!l)return closeDlg();const r=remU(l),v=l.p*SH.q,k=SH.ids.size;
+  dlg(`<h2>Rachar ${esc(l.n)}</h2><p>Toque em quem vai dividir. O resto do pedido continua separado por pessoa.</p>
+  <div class="pchips">${F.people.map((q,i)=>`<button class="pchip${SH.ids.has(q.id)?' on':''}" data-act="shTog" data-id="${q.id}" style="--pc:${PC[i%PC.length]}"><i></i>${esc(q.n)}</button>`).join('')}</div>
+  ${r>1?`<div class="rowc" style="margin-top:14px"><span>Quantos vão ser rachados?</span><div class="cnt"><button data-act="shDec" aria-label="Menos um">${I.minus}</button><b>${SH.q}</b><button data-act="shInc" aria-label="Mais um">${I.plus}</button></div></div>`:''}
+  <p class="pp" style="font-size:15px">${SH.q}× ${brl(l.p)} = ${brl(v)}${k?` ÷ ${k} = <b>${brl(alloc(v,Array(k).fill(1))[0])}</b> para cada (sem ${S.pct}%)`:' · escolha pelo menos uma pessoa'}</p>
+  <div class="dbtn"><button class="btn gh" data-act="dlgNo">Cancelar</button><button class="btn pri" data-act="dlgOk" ${k?'':'disabled'}>Rachar</button></div>`,
+  ()=>{if(!SH.ids.size)return false;F.shr.push({u:SH.u,q:SH.q,who:F.people.filter(p=>SH.ids.has(p.id)).map(p=>p.id)});save();renderClose()})}
+const payChips=(act,i,sel)=>`<div class="pays sm">${PAYS.map(x=>`<button class="pay${sel===x?' on':''}" data-act="${act}" data-i="${i}" data-v="${x}">${x}</button>`).join('')}</div>`;
+function renderClose(){
+  const o=S.orders[cur];if(!o)return;prepSplit(o);const s=subOf(o),t=svc(s),c=s+t,p=S.pct,tot=F.svc?c:s;
+  $('#fechTitle').textContent='Fechar mesa '+cur;
+  let h=`<div class="vals" style="margin-top:16px"><div class="val${F.svc?'':' hi'}"><span>Sem ${p}%</span><b>${brl(s)}</b></div><div class="val${F.svc?' hi':''}"><span>Com ${p}%</span><b>${brl(c)}</b></div></div>
+  <div class="box"><label class="tog"><input type="checkbox" id="svcT" ${F.svc?'checked':''}> Cliente vai pagar os ${p}% do garçom</label></div>
+  <div class="seg">${[['all','Tudo junto'],['eq','Dividir igual'],['pp','Por pessoa']].map(([k,l])=>`<button class="${F.mode===k?'on':''}" data-act="mode" data-v="${k}" aria-pressed="${F.mode===k}">${l}</button>`).join('')}</div>`;
+  if(F.mode==='all'){
+    h+=`<div class="rcpt"><h3>${esc(S.name||'Conta')} · Mesa ${cur}</h3><div class="meta">Aberta ${hhmm(o.t)} · agora ${hhmm(Date.now())} · ${qtyOf(o)} itens</div>
+    ${o.items.map(l=>`<div class="rr"><span>${l.q}× ${esc(l.n)} <small class="rs">${esc(l.s)}</small>${l.o?`<em>${esc(l.o)}</em>`:''}</span><span>${num(l.p*l.q)}</span></div>`).join('')}
+    <div class="rr sep"><span>Subtotal (sem ${p}%)</span><span>${brl(s)}</span></div>
+    <div class="rr${F.svc?'':' off'}"><span>Serviço do garçom (${p}%)</span><span>${brl(t)}</span></div>
+    <div class="rr big"><span>${F.svc?`Total com ${p}%`:`Total sem ${p}%`}</span><span>${brl(tot)}</span></div></div>
+    <div class="box"><h3>Pagamento</h3><div class="pays">${PAYS.map(x=>`<button class="pay${F.pay===x?' on':''}" data-act="pay" data-v="${x}">${x}</button>`).join('')}</div></div>`;
+  }else if(F.mode==='eq'){
+    const parts=alloc(tot,Array(F.n).fill(1)),paid=parts.reduce((a,v,i)=>a+(F.parts[i]?v:0),0);
+    h+=`<div class="box"><div class="rowc"><h3 style="margin:0">Em quantas partes?</h3><div class="cnt"><button data-act="eqDec" aria-label="Uma parte a menos">${I.minus}</button><b>${F.n}</b><button data-act="eqInc" aria-label="Uma parte a mais">${I.plus}</button></div></div>
+    <p class="pp">${brl(tot)} ${F.svc?'com':'sem'} ${p}% ÷ ${F.n} = <b>${brl(parts[0])}</b>${parts[0]!==parts[F.n-1]?' (centavos ajustados)':''}<br>Recebido ${brl(paid)} · falta <b>${brl(tot-paid)}</b></p></div>
+    ${parts.map((v,i)=>`<div class="part${F.parts[i]?' paid':''}"><div class="rowc"><b>Parte ${i+1}${F.parts[i]?' · pago':''}</b><b class="pv">${brl(v)}</b></div>${payChips('partPay',i,F.parts[i])}</div>`).join('')}`;
+  }else{
+    const C=calcPeople(o),cp=F.people[F.cur],P=F.people.length,paid=F.people.reduce((a,q,i)=>a+(q.pay?C.sub[i]+C.sv[i]:0),0),anyRem=o.items.some(l=>remU(l)>0);
+    h+=`<div class="ppbar"><div class="pchips">${F.people.map((q,i)=>`<button class="pchip${i===F.cur?' on':''}" data-act="ppSel" data-i="${i}" style="--pc:${PC[i%PC.length]}"><i></i>${esc(q.n)}</button>`).join('')}<button class="pchip padd" data-act="ppAdd">+ Pessoa</button></div>
+    <div class="ppst"><span>Lançando para <b style="color:${PC[F.cur%PC.length]}">${esc(cp.n)}</b></span><button class="lnk2" data-act="ppRen">Renomear</button>${P>1?'<button class="lnk2" data-act="ppDel">Remover</button>':''}<span class="${C.left>0?'rem':'done'}">${C.left>0?`Falta separar ${brl(C.left)}`:'Tudo separado'}</span></div></div>
+    <div class="box"><div class="rowc"><h3 style="margin:0">Itens da mesa</h3>${anyRem?`<button class="lnk" data-act="ppRest">Resto para ${esc(cp.n)}</button>`:''}</div>
+    <p class="small">Toque <b>+</b> para pôr o item na conta de ${esc(cp.n)}. Item dividido entre alguns (ex.: 2 cervejas entre 3): <b>Rachar</b>.</p>
+    ${o.items.map(l=>{const r=remU(l),mine=cp.a[l.u]||0,gs=F.shr.filter(g=>g.u===l.u);
+      const who=F.people.map((q,i)=>q.a[l.u]?`<span style="--pc:${PC[i%PC.length]}"><i></i>${esc(q.n)} ${q.a[l.u]}</span>`:'').join('')+gs.map(g=>`<span>Rachado ${g.q} ÷${g.who.length}: ${g.who.map(id=>esc((F.people.find(p=>p.id===id)||{}).n)).join(', ')}</span>`).join('');
+      return `<div class="si"><div class="sn"><b>${l.q}× ${esc(l.n)}</b><span>${esc(l.s)} · ${brl(l.p)} cada</span>${who?`<div class="who">${who}</div>`:''}</div>
+      <div class="sctl"><span class="${r?'rem':'done'}">${r?`Falta ${r} de ${l.q}`:'Separado'}</span><div class="step"><button data-act="ppDec" data-u="${l.u}" ${mine?'':'disabled'} aria-label="Tirar de ${esc(cp.n)}">${I.minus}</button><b>${mine}</b><button data-act="ppInc" data-u="${l.u}" ${r?'':'disabled'} aria-label="Pôr para ${esc(cp.n)}">${I.plus}</button></div></div>
+      ${(r>0&&P>1)||gs.length?`<div class="edx" style="margin:6px 0 0">${r>0&&P>1?`<button class="lnk sm" data-act="ppShare" data-u="${l.u}">Rachar…</button>`:''}${gs.length?`<button class="lnk sm" data-act="ppUnshare" data-u="${l.u}">Desfazer racha</button>`:''}</div>`:''}</div>`}).join('')}</div>
+    <div class="rowc"><h3 class="h3s">Conta de cada um</h3><span class="small" style="margin:14px 0 0">Recebido ${brl(paid)} de ${brl(tot)}</span></div>
+    ${F.people.map((q,i)=>{const its=o.items.filter(l=>q.a[l.u]);
+      return `<div class="pc${q.pay?' paid':''}" style="--pc:${PC[i%PC.length]}"><div class="rowc"><b class="pn"><i></i>${esc(q.n)}${q.pay?' · pago':''}</b><b class="pv">${brl(C.sub[i]+C.sv[i])}</b></div>
+      ${its.map(l=>`<div class="rr"><span>${q.a[l.u]}× ${esc(l.n)}</span><span>${num(l.p*q.a[l.u])}</span></div>`).join('')}
+      ${C.shl[i].map(x=>`<div class="rr"><span>${x.q}× ${esc(x.l.n)} <small class="rs">rachado ÷${x.k}</small></span><span>${num(x.v)}</span></div>`).join('')}
+      ${its.length||C.shp[i]?`<div class="rr sep"><span>Sem ${p}%</span><span>${brl(C.sub[i])}</span></div>${F.svc?`<div class="rr"><span>${p}% do garçom</span><span>${brl(C.sv[i])}</span></div>`:''}`:'<p class="small">Nada separado ainda.</p>'}
+      ${payChips('ppPay',i,q.pay)}</div>`}).join('')}`;
+  }
+  $('#fechBody').innerHTML=h;$('#fechOk').textContent='Fechar · '+brl(tot);
+}
+function openClose(){prepSplit(S.orders[cur]);save();renderClose();$('#fech').classList.add('open');$('#fech .sbody').scrollTop=0;lock()}
+function billText(){const o=S.orders[cur];prepSplit(o);const s=subOf(o),t=svc(s),c=s+t,p=S.pct,tot=F.svc?c:s;
+  const L=[`*${S.name||'Conta'}* · Mesa ${cur}`,'',...o.items.map(l=>`${l.q}x ${l.n} (${l.s})${l.o?' – '+l.o:''} … ${brl(l.p*l.q)}`),'',`Subtotal (sem ${p}%): ${brl(s)}`,`Serviço do garçom (${p}%): ${brl(t)}`,`*Total com ${p}%: ${brl(c)}*`];
+  if(F.mode==='eq'){const v=alloc(tot,Array(F.n).fill(1));L.push('',`*Dividido em ${F.n}* (${F.svc?'com':'sem'} ${p}%)`,...v.map((x,i)=>`Parte ${i+1}: ${brl(x)}`))}
+  if(F.mode==='pp'){const C=calcPeople(o);L.push('',`*Cada um paga o que consumiu* (${F.svc?'com':'sem'} ${p}%)`);
+    F.people.forEach((q,i)=>{const its=o.items.filter(l=>q.a[l.u]).map(l=>`${q.a[l.u]}x ${l.n}`);C.shl[i].forEach(x=>its.push(`${x.q}x ${x.l.n} ÷${x.k}`));L.push(`${q.n}: *${brl(C.sub[i]+C.sv[i])}* — ${its.join(', ')||'nada'}`)});
+    if(C.left>0)L.push(`Falta separar: ${brl(C.left)}`)}
+  return L.join('\n')}
+
+/* ---- sincronizar ---- */
+let SY={ex:new Set(),h:true,menu:false,out:'',outInfo:'',code:'',P:null,W:null,log:null,err:'',done:''};
+async function pack(obj){let bytes=new TextEncoder().encode(JSON.stringify(obj)),f='J';
+  if(window.CompressionStream){try{const st=new Blob([bytes]).stream().pipeThrough(new CompressionStream('deflate'));bytes=new Uint8Array(await new Response(st).arrayBuffer());f='Z'}catch(e){}}
+  let bin='';for(let i=0;i<bytes.length;i+=8192)bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+8192));
+  return 'CMD1'+f+'.'+btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+async function unpack(txt){const mm=String(txt).replace(/\s+/g,'').match(/CMD1([ZJ])\.([A-Za-z0-9_-]+)/);if(!mm)throw new Error('Não achei um código aqui. Cole a mensagem inteira que o outro celular mandou.');
+  let b=mm[2].replace(/-/g,'+').replace(/_/g,'/');while(b.length%4)b+='=';let bytes;try{bytes=Uint8Array.from(atob(b),c=>c.charCodeAt(0))}catch(e){throw new Error('O código veio cortado. Peça para mandar de novo.')}
+  if(mm[1]==='Z'){if(!window.DecompressionStream)throw new Error('Este navegador é antigo demais para ler o código. Atualize o Chrome.');
+    try{const st=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate'));bytes=new Uint8Array(await new Response(st).arrayBuffer())}catch(e){throw new Error('O código veio cortado. Peça para mandar de novo.')}}
+  const P=JSON.parse(new TextDecoder().decode(bytes));if(!P||P.v!==1)throw new Error('Código de outra versão do app.');return P}
+function payload(){const cut=Date.now()-3*864e5;
+  const o=Object.entries(S.orders).filter(([m,x])=>x.items.length&&!SY.ex.has(+m)).map(([m,x])=>{ens(x);return{i:x.id,a:x.ali||[],m:+m,mt:x.mt,t:x.t,d:Object.entries(x.del),l:x.items.map(l=>[l.u,l.id,l.n,l.s,l.z?1:0,l.p,l.q,l.o||'',l.k||0,l.ts,l.bd||'',l.by||''])}});
+  const P={v:1,from:S.dev||'Celular sem nome',fd:S.did,at:Date.now(),ms:S.mesas,o,g:Object.entries(S.gone).filter(([,e])=>e.t>cut).map(([i,e])=>[i,e.t,e.b])};
+  if(SY.h){const td=dayKey(Date.now());P.h=S.hist.filter(h=>dayKey(h.t1)===td);P.hg=Object.entries(S.hgone).filter(([,t])=>t>cut)}
+  if(SY.menu)P.menu={menu:S.menu,pct:S.pct,name:S.name,zap:S.zap};return P}
+const decO=x=>({id:x.i,ali:x.a||[],m:x.m,mt:x.mt,t:x.t,del:Object.fromEntries(x.d||[]),items:(x.l||[]).map(([u,id,n,s,z,p,q,o,k,ts,bd,by])=>({u,id,n,s,z:!!z,p,q,o,k,ts,bd,by}))});
+function mergeInto(a,b){a.ali=[...new Set([...(a.ali||[]),...ids(b)])].filter(x=>x&&x!==a.id);a.del=a.del||{};
+  for(const[u,t]of Object.entries(b.del||{}))a.del[u]=Math.max(a.del[u]||0,t);
+  const map=new Map(a.items.map(l=>[l.u,l]));let add=0,upd=0;
+  for(const l of b.items){const x=map.get(l.u);if(!x){if((a.del[l.u]||0)>=l.ts)continue;const c={...l};a.items.push(c);map.set(l.u,c);add+=l.q}else if((l.ts||0)>(x.ts||0)){Object.assign(x,l);upd++}}
+  const n0=a.items.length;a.items=a.items.filter(l=>!((a.del[l.u]||0)>=(l.ts||0)));
+  a.t=Math.min(a.t||Infinity,b.t||Infinity);a.mt=Math.max(a.mt||0,b.mt||0);return{add,upd,rem:n0-a.items.length}}
+const lnames=ls=>ls.map(l=>`${l.q}× ${l.n}`).join(', ');
+const nItens=n=>n===1?'1 item':n+' itens';
+function applyPayload(W,P){const log=[],who=P.from||'outro celular';
+  const tabs=()=>Object.keys(W.orders).map(Number);
+  const findBy=set=>tabs().filter(m=>ids(W.orders[m]).some(i=>set.has(i)));
+  for(const[i,t,b]of P.g||[]){if(!W.gone[i])W.gone[i]={t,b};
+    for(const m of findBy(new Set([i]))){const o=W.orders[m];const rest=o.items.filter(l=>b?!b.includes(l.u):l.ts>t);
+      if(rest.length){ids(o).forEach(x=>{if(!W.gone[x])W.gone[x]={t,b}});o.items=rest;o.id=uid();o.ali=[];o.del={};
+        log.push({k:'warn',m,tx:`${b?'Fechada':'Cancelada'} por ${who}, mas ${rest.length===1?'1 item lançado aqui ficou':rest.length+' itens lançados aqui ficaram'} fora da conta: ${lnames(rest)}. A mesa continua aberta com ${rest.length===1?'ele':'eles'}.`})}
+      else{delete W.orders[m];log.push({k:'gone',m,tx:`${b?'Fechada':'Cancelada'} por ${who}`})}}}
+  for(const x of P.o||[]){let I=decO(x);
+    const gk=ids(I).find(i=>W.gone[i]);
+    if(gk){const e=W.gone[gk];const rest=I.items.filter(l=>e.b?!e.b.includes(l.u):l.ts>e.t);
+      if(!rest.length){log.push({k:'skip',m:I.m,tx:`Já foi ${e.b?'fechada':'cancelada'} aqui. Ignorada.`});continue}
+      I={id:uid(),ali:[],m:I.m,mt:I.mt,t:I.t,del:{},items:rest};
+      log.push({k:'warn',m:I.m,tx:`Já foi ${e.b?'fechada':'cancelada'} aqui, mas ${who} lançou ${lnames(rest)} que não ${rest.length>1?'entraram':'entrou'} na conta. Volta aberta com ${rest.length>1?'esses itens':'esse item'}.`})}
+    const ms=findBy(new Set(ids(I)));
+    if(!ms.length){const ex=W.orders[I.m];
+      if(ex){ens(ex);const r=mergeInto(ex,I);log.push({k:'join',m:I.m,tx:`Já tinha comanda aqui. Juntou ${nItens(r.add)} de ${who}.`})}
+      else{W.orders[I.m]={id:I.id,ali:I.ali,t:I.t,mt:I.mt,del:I.del,items:I.items};log.push({k:'new',m:I.m,tx:`Abre com ${nItens(qtyOf(I))} · ${brl(subOf(I))}`})}
+      continue}
+    const cands=ms.map(m=>({m,mt:W.orders[m].mt||0})).concat({m:I.m,mt:I.mt||0});const dest=cands.reduce((a,c)=>c.mt>a.mt?c:a).m;
+    const base=W.orders[ms[0]];ens(base);for(const m of ms.slice(1)){const o=W.orders[m];ens(o);mergeInto(base,o)}
+    const r=mergeInto(base,I);ms.forEach(m=>delete W.orders[m]);
+    const parts=[];if(r.add)parts.push(`+${nItens(r.add)}`);if(r.upd)parts.push(`${r.upd} ${r.upd===1?'alterado':'alterados'}`);if(r.rem)parts.push(`${r.rem} ${r.rem===1?'removido':'removidos'}`);
+    if(W.orders[dest]){ens(W.orders[dest]);mergeInto(W.orders[dest],base);log.push({k:'join',m:dest,tx:`Mudou da mesa ${ms[0]} e juntou com a comanda que já estava aqui`})}
+    else{if(base.items.length)W.orders[dest]=base;
+      if(dest!==ms[0])log.push({k:'move',m:dest,tx:`Mudou da mesa ${ms[0]} para a ${dest}${parts.length?' · '+parts.join(', '):''}`});
+      else if(parts.length)log.push({k:'upd',m:dest,tx:parts.join(', ')+` · agora ${brl(subOf(base))}`})}}
+  if(P.h){const have=new Set(W.hist.map(h=>String(h.id)));let n=0;for(const h of P.h){if(have.has(String(h.id))||W.hgone[h.id])continue;W.hist.push(h);n++}
+    if(n)log.push({k:'hist',tx:`${n} ${n===1?'conta fechada':'contas fechadas'} de ${who} entram nas Fechadas`})}
+  for(const[i,t]of P.hg||[]){if(!W.hgone[i])W.hgone[i]=t;const k0=W.hist.length;W.hist=W.hist.filter(h=>String(h.id)!==String(i));if(W.hist.length<k0)log.push({k:'hist',tx:`Uma conta reaberta por ${who} sai das Fechadas`})}
+  if(P.ms>W.mesas){W.mesas=P.ms;log.push({k:'cfg',tx:`O salão passa a ter ${P.ms} mesas`})}
+  if(P.menu){W.cfgAt=Date.now();W.menu=P.menu.menu;W.pct=P.menu.pct;if(P.menu.name)W.name=P.menu.name;if(P.menu.zap!==undefined)W.zap=P.menu.zap;log.push({k:'cfg',tx:`Cardápio, preços e ${P.menu.pct}% do garçom ficam iguais aos de ${who}`})}
+  W.sync={t:Date.now(),from:who,at:P.at};return log}
+const TAG={new:['Nova','t-new'],upd:['Atualizada','t-upd'],join:['Juntada','t-upd'],move:['Mudou','t-upd'],gone:['Saiu','t-off'],skip:['Ignorada','t-off'],warn:['Atenção','t-warn'],hist:['Fechadas','t-new'],cfg:['Ajustes','t-new']};
+function previewHTML(){const P=SY.P,old=Date.now()-P.at>30*60000;
+  return `<div class="prev" id="syPrev"><p><b>Código de ${esc(P.from)}</b> · gerado às ${hhmm(P.at)} (${ago(P.at)})</p>${old?'<p class="warnp">Código antigo. Se o colega lançou mais coisa depois, peça um novo.</p>':''}
+  ${SY.log.length?SY.log.map(x=>`<div class="lg"><span class="tg ${TAG[x.k][1]}">${TAG[x.k][0]}</span><div>${x.m?`<b>Mesa ${x.m}</b> · `:''}${esc(x.tx)}</div></div>`).join(''):'<p>Nada muda: os dois celulares já estão iguais.</p>'}
+  <div class="btns" style="margin-top:12px"><button class="btn gh" data-act="syCancel">Cancelar</button><button class="btn pri" data-act="syApply">${SY.log.length?'Aplicar':'Ok'}</button></div></div>`}
+function vSync(){
+  const open=Object.keys(S.orders).filter(m=>S.orders[m].items.length).map(Number).sort((a,b)=>a-b),inc=open.filter(m=>!SY.ex.has(m));
+  const tdH=S.hist.filter(h=>dayKey(h.t1)===dayKey(Date.now())).length;
+  return head('Sincronizar',S.dev?`Este celular: ${S.dev}`:'Dê um nome a este celular')+
+  `<div class="band"><div class="wrap"><p class="bandp">${LV.on?`Tempo real: <b>${LBL[LST]}</b>${LST==='on'&&onlineNames().length?' com '+onlineNames().map(esc).join(', '):''}. Tudo que for lançado aparece na hora.`:S.sync?`Última troca às <b>${hhmm(S.sync.t)}</b> com <b>${esc(S.sync.from)}</b> · ${ago(S.sync.t)}`:'Troque códigos pelo WhatsApp e os dois celulares ficam com as mesmas mesas.'}</p></div></div>
+  <div class="wrap">
+  ${SY.done?`<div class="okp"><b>Pronto, mesas atualizadas.</b> Para ${esc(SY.done)} ficar igual a você, mande o seu código de volta.<button class="btn sun" style="width:100%;margin-top:10px" data-act="syGen">Gerar código de volta</button></div>`:''}
+  ${liveBox()}
+  <div class="box"><h3>Nome deste celular</h3><div class="fld" style="margin:0"><input id="dv" data-set="dev" value="${esc(S.dev)}" placeholder="Ex.: Celular do João" aria-label="Nome deste celular"></div><p class="small" style="margin-top:6px">Aparece no outro celular em cada item que você lançar.</p></div>
+  <h3 class="h3s">${LV.on?'Sem internet? Troque por código':'Trocar por código'}</h3>
+  <div class="box"><h3>Enviar para o outro celular</h3>
+  ${open.length?`<p class="small">Mesas que vão no código. Toque para tirar ou pôr.</p><div class="pick">${open.map(m=>`<button class="${SY.ex.has(m)?'':'on'}" data-act="syTog" data-m="${m}">${m}<small>${SY.ex.has(m)?'fora':nItens(qtyOf(S.orders[m]))}</small></button>`).join('')}</div>`:'<p class="small">Nenhuma mesa aberta agora. O código leva mesmo assim as mesas fechadas e canceladas, para o outro celular tirar elas também.</p>'}
+  <label class="tog"><input type="checkbox" id="syH" ${SY.h?'checked':''}> Levar as fechadas de hoje (${tdH})</label>
+  <label class="tog"><input type="checkbox" id="syM" ${SY.menu?'checked':''}> Levar cardápio, preços e ajustes</label>
+  <button class="btn pri" style="width:100%;margin-top:6px" data-act="syGen">Gerar código${inc.length?` · ${inc.length} ${inc.length===1?'mesa':'mesas'}`:''}</button>
+  ${SY.out?`<textarea class="cp" readonly id="syOut" style="min-height:120px;margin-top:10px">${esc(SY.out)}</textarea><div class="btns" style="margin-top:8px"><button class="btn gh" data-act="syCopy">Copiar</button><a class="btn zap" href="${esc('https://wa.me/?text='+encodeURIComponent(SY.out))}" target="_blank" rel="noopener">WhatsApp</a></div><p class="small" style="margin-top:6px">${esc(SY.outInfo)}</p>`:''}</div>
+  <div class="box" id="syRecv"><h3>Receber do outro celular</h3><p class="small">Cole a mensagem inteira que chegou no WhatsApp. Nada muda antes de você ver e tocar em Aplicar.</p>
+  <textarea class="cp" id="syIn" placeholder="Cole aqui o código (começa com CMD1)" style="min-height:96px">${esc(SY.code)}</textarea>
+  <div class="btns" style="margin-top:8px"><button class="btn gh" data-act="syPaste">Colar</button><button class="btn pri" data-act="syRead">Ver mudanças</button></div>
+  ${SY.err?`<p class="warnp" style="margin-top:10px">${esc(SY.err)}</p>`:''}${SY.log?previewHTML():''}</div>
+  <details class="box"><summary><b>Como usar com 2 ou mais celulares</b></summary><ol class="how">
+  <li>Dê um nome para cada celular aqui em cima, por exemplo "João" e "Maria".</li>
+  <li>Cada um lança os pedidos normalmente no seu celular.</li>
+  <li>Para juntar: um gera o código e manda no WhatsApp. O outro cola em <b>Receber</b>, confere e toca em <b>Aplicar</b>.</li>
+  <li>Depois, quem recebeu toca em <b>Gerar código de volta</b> e manda. Assim os dois ficam iguais.</li>
+  <li>Troque códigos sempre antes de fechar uma conta. Se alguém lançou algo que não entrou na conta, o app avisa.</li>
+  <li>Item lançado duas vezes não duplica: cada item tem uma etiqueta única. Mesa fechada num celular sai do outro.</li></ol></details>
+  </div>`}
+async function genCode(){const n=Object.keys(S.orders).filter(m=>S.orders[m].items.length&&!SY.ex.has(+m)).length;
+  const code=await pack(payload());
+  SY.out=`Comandas · código de ${S.dev||'celular sem nome'} · ${n} ${n===1?'mesa aberta':'mesas abertas'} · ${hhmm(Date.now())}\nCole em Sincronizar → Receber:\n${code}`;
+  SY.outInfo=`Gerado às ${hhmm(Date.now())} · ${code.length} caracteres. Se lançar mais coisa, gere de novo.`;SY.done='';save();render();
+  const el=$('#syOut');if(el)el.scrollIntoView({block:'center',behavior:'smooth'})}
+async function readCode(){SY.err='';SY.log=null;SY.P=null;SY.W=null;
+  try{const P=await unpack(SY.code);if(P.fd&&P.fd===S.did)throw new Error('Esse código foi gerado neste mesmo celular. Cole o código do outro celular.');
+    const W=JSON.parse(JSON.stringify(S));Object.values(W.orders).forEach(ens);SY.log=applyPayload(W,P);SY.P=P;SY.W=W}
+  catch(e){SY.err=e.message||'Não deu para ler o código.'}
+  render();const el=$('#syPrev')||$('#syRecv .warnp');if(el)el.scrollIntoView({block:'start',behavior:'smooth'})}
+
+/* ---- tempo real (Firebase Realtime Database via REST) ---- */
+const LBL={on:'Online',conn:'Conectando…',off2:'Sem internet',err:'Não conectou',deny:'Sem permissão',off:'Desligado'};
+const FB_RULES=`{
+  "rules": {
+    "salas": {
+      "$sala": {
+        ".read": "$sala.length >= 20",
+        ".write": "$sala.length >= 20"
+      }
+    }
+  }
+}`;
+const saveLV=()=>{try{localStorage.setItem(LKEY,JSON.stringify(LV))}catch(e){}};
+const lvBase=()=>`${LV.url}/salas/${LV.key}.json`;
+const normUrl=v=>String(v||'').trim().replace(/\/+$/,'').replace(/\.json$/,'');
+const okUrl=u=>/^https:\/\/[a-z0-9.-]+\.(firebaseio\.com|firebasedatabase\.app)$/i.test(u)||/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(u);
+function mSet(path,data){if(R===null)R={};const ps=String(path).split('/').filter(Boolean);
+  if(!ps.length){R=data&&typeof data==='object'?data:{};return}
+  let o=R;for(let i=0;i<ps.length-1;i++){if(!o[ps[i]]||typeof o[ps[i]]!=='object')o[ps[i]]={};o=o[ps[i]]}
+  const k=ps[ps.length-1];if(data===null||data===undefined)delete o[k];else o[k]=data}
+function liveStart(){if(ES){ES.close();ES=null}if(!LV.url||!LV.key)return;LV.on=true;saveLV();LST='conn';R=null;firstLoad=true;liveUI();
+  try{ES=new EventSource(lvBase())}catch(e){LST='err';liveUI();return}
+  const onEv=(e,kind)=>{let d;try{d=JSON.parse(e.data)}catch(x){return}if(!d||typeof d!=='object')return;
+    if(kind==='put')mSet(d.path,d.data);else for(const[k,v]of Object.entries(d.data||{}))mSet(String(d.path).replace(/\/$/,'')+'/'+k,v);
+    if(LST!=='on'){LST='on';liveUI()}clearTimeout(recT);recT=setTimeout(reconcile,120)};
+  ES.addEventListener('put',e=>onEv(e,'put'));ES.addEventListener('patch',e=>onEv(e,'patch'));
+  ES.addEventListener('cancel',()=>{LST='deny';if(ES){ES.close();ES=null}liveUI()});
+  ES.addEventListener('auth_revoked',()=>{LST='deny';liveUI()});
+  ES.onerror=()=>{if(LST==='deny')return;const n=R?'off2':'err';if(LST!==n){LST=n;liveUI()}};
+  ping();clearInterval(presT);presT=setInterval(ping,45000)}
+function liveStop(){if(ES){ES.close();ES=null}clearInterval(presT);LV.on=false;saveLV();LST='off';liveUI()}
+function ping(){if(!LV.on||!LV.key)return;fetch(lvBase(),{method:'PATCH',body:JSON.stringify({['presence/'+S.did]:{n:S.dev||'Sem nome',at:Date.now()}})}).catch(()=>{})}
+const onlineNames=()=>Object.entries((R&&R.presence)||{}).filter(([d,p])=>d!==S.did&&p&&Date.now()-p.at<300000).map(([,p])=>p.n||'Sem nome');
+const srvLine=l=>({id:l.id||'',n:l.n,s:l.s||'',z:!!l.z,p:l.p,q:l.q,o:l.o||'',k:l.k||0,ts:l.ts,bd:l.bd||'',by:l.by||''});
+const srvOrder=(m,o)=>({m,t:o.t,mt:o.mt,ali:o.ali&&o.ali.length?o.ali:null,del:Object.keys(o.del||{}).length?o.del:null,items:Object.fromEntries(o.items.map(l=>[l.u,srvLine(l)]))});
+const touchCfg=()=>{S.cfgAt=Date.now()};
+const schedPush=()=>{clearTimeout(pushT);pushT=setTimeout(pushDiff,250)};
+function pushDiff(){if(!LV.on||!R)return;const upd={},ro=R.orders||{},seen=new Set();
+  for(const[m,o]of Object.entries(S.orders)){if(!o.items.length)continue;ens(o);ids(o).forEach(i=>seen.add(i));const r=ro[o.id],P='orders/'+o.id;
+    if(!r){upd[P]=srvOrder(+m,o);continue}
+    if(r.m!==+m||r.mt!==o.mt){upd[P+'/m']=+m;upd[P+'/mt']=o.mt}
+    if(r.t!==o.t)upd[P+'/t']=o.t;
+    if(JSON.stringify(r.ali||[])!==JSON.stringify(o.ali||[]))upd[P+'/ali']=o.ali&&o.ali.length?o.ali:null;
+    const ri=r.items||{},here=new Set(o.items.map(l=>l.u));
+    for(const l of o.items)if(!ri[l.u]||ri[l.u].ts!==l.ts)upd[`${P}/items/${l.u}`]=srvLine(l);
+    const rd=r.del||{};for(const[u,t]of Object.entries(o.del||{})){if(rd[u]!==t)upd[`${P}/del/${u}`]=t;if(ri[u]&&!here.has(u))upd[`${P}/items/${u}`]=null}}
+  for(const oid of Object.keys(ro))if(!seen.has(oid)&&(S.gone[oid]||Object.values(S.orders).some(o=>(o.ali||[]).includes(oid))))upd['orders/'+oid]=null;
+  const cut=Date.now()-3*864e5,hcut=Date.now()-7*864e5,rg=R.gone||{},rh=R.hist||{},rhg=R.hgone||{};
+  for(const[i,e]of Object.entries(S.gone))if(e.t>=cut&&!rg[i])upd['gone/'+i]=e.b?{t:e.t,b:e.b}:{t:e.t};
+  for(const[i,e]of Object.entries(rg))if(!e||e.t<cut)upd['gone/'+i]=null;
+  for(const h of S.hist)if(h.t1>=hcut&&!rh[h.id]&&!S.hgone[h.id])upd['hist/'+h.id]=JSON.parse(JSON.stringify(h));
+  for(const[i,h]of Object.entries(rh))if(!h||h.t1<hcut)upd['hist/'+i]=null;
+  for(const[i,t]of Object.entries(S.hgone))if(t>=cut&&!rhg[i]){upd['hgone/'+i]=t;if(rh[i])upd['hist/'+i]=null}
+  for(const[i,t]of Object.entries(rhg))if(t<cut)upd['hgone/'+i]=null;
+  if((S.cfgAt||0)>((R.cfg&&R.cfg.at)||0))upd.cfg={at:S.cfgAt,menu:S.menu,pct:S.pct,name:S.name,zap:S.zap,mesas:S.mesas};
+  if(Object.keys(upd).length)send(upd)}
+async function send(upd){if(inflight){again=true;return}inflight=true;
+  try{const r=await fetch(lvBase(),{method:'PATCH',body:JSON.stringify(upd)});if(!r.ok)throw new Error('http '+r.status);
+    for(const[k,v]of Object.entries(upd))mSet('/'+k,v===null?null:JSON.parse(JSON.stringify(v)));clearTimeout(retryT)}
+  catch(e){clearTimeout(retryT);retryT=setTimeout(pushDiff,5000);if(LST==='on'){LST='off2';liveUI()}}
+  finally{inflight=false;if(again){again=false;schedPush()}}}
+const sigS=()=>JSON.stringify([S.orders,S.hist.length,S.mesas,S.pct,S.cfgAt||0]);
+function reconcile(){if(!R)return;
+  const before={};for(const[t,o]of Object.entries(S.orders))for(const l of o.items)before[l.u]=l.q;
+  const where=new Map();Object.entries(S.orders).forEach(([t,o])=>{ens(o);where.set(o.id,+t)});
+  const sig0=sigS(),on0=onlineNames().join();
+  const P={v:1,from:'outro celular',at:Date.now(),ms:0,
+    o:Object.entries(R.orders||{}).filter(([,x])=>x&&x.items).map(([i,x])=>{let m=x.m;if(m==null){const loc=Object.entries(S.orders).find(([,o])=>ids(o).includes(i));m=loc?+loc[0]:null}return m==null?null:{i,x,m}}).filter(Boolean).map(({i,x,m})=>({i,a:x.ali||[],m,mt:x.mt,t:x.t,d:Object.entries(x.del||{}),l:Object.entries(x.items||{}).map(([u,l])=>[u,l.id,l.n,l.s,l.z?1:0,l.p,l.q,l.o||'',l.k||0,l.ts,l.bd||'',l.by||''])})),
+    g:Object.entries(R.gone||{}).filter(([,e])=>e).map(([i,e])=>[i,e.t,e.b||null]),h:Object.values(R.hist||{}).filter(Boolean),hg:Object.entries(R.hgone||{})};
+  const sy=S.sync,log=applyPayload(S,P);S.sync=sy;
+  const c=R.cfg;let cfgN=false;
+  if(c&&c.at>(S.cfgAt||0)){if(Array.isArray(c.menu))S.menu=c.menu;if(c.pct!=null)S.pct=c.pct;S.name=c.name||'';S.zap=c.zap||'';if(c.mesas)S.mesas=c.mesas;S.cfgAt=c.at;cfgN=true}
+  if(!firstLoad){
+    const grp={};for(const[t,o]of Object.entries(S.orders))for(const l of o.items){if(!l.bd||l.bd===S.did)continue;const d=l.q-(before[l.u]||0);if(d>0)(grp[t]=grp[t]||{by:l.by,it:[]}).it.push(`+${d} ${l.n}`)}
+    for(const[t,g]of Object.entries(grp))note(+t,g.it.join(', ')+(g.by?' · '+g.by:''));
+    for(const[oid,t]of where){const now=Object.entries(S.orders).find(([,o])=>ids(o).includes(oid));
+      if(!now){const e=S.gone[oid];if(e){const h=S.hist.find(x=>x.oid===oid);note(t,e.b?`Fechada${h&&h.by?' por '+h.by:''}`:'Comanda cancelada')}}
+      else if(+now[0]!==t)note(+now[0],`Veio da mesa ${t}`)}
+    log.filter(x=>x.k==='warn').forEach(x=>note(x.m,x.tx,1));
+    if(cfgN)note(0,'Cardápio e ajustes atualizados por outro celular')}
+  firstLoad=false;const changed=sigS()!==sig0;save();
+  if(changed)refreshUI();if(onlineNames().join()!==on0)liveUI()}
+function refreshUI(){render();
+  if($('#pick').classList.contains('open')){if(S.orders[cur]||true){renderPick();pickBar()}}
+  if($('#fech').classList.contains('open')){if(S.orders[cur])renderClose();else{$('#fech').classList.remove('open');lock();toast('Essa mesa foi fechada em outro celular')}}}
+function liveUI(){const b=$('#lvb');if(b)b.outerHTML=liveBadge();if(view==='sync'&&!$('#dlg').classList.contains('open')&&!(document.activeElement&&/INPUT|TEXTAREA/.test(document.activeElement.tagName)))render()}
+function liveBadge(){if(!LV.on)return'<span id="lvb"></span>';const n=onlineNames().length;
+  return `<button id="lvb" class="lvb s-${LST}" data-act="nav" data-v="sync" aria-label="Tempo real: ${LBL[LST]}"><i></i>${LBL[LST]}${LST==='on'&&n?` · ${n+1}`:''}</button>`}
+function note(m,tx,long){const box=$('#ntf');const el=document.createElement('button');el.className='nt'+(long?' long':'');el.dataset.act='ntGo';if(m)el.dataset.m=m;
+  el.innerHTML=`${m?`<b>Mesa ${m}</b>`:''}<span>${esc(tx)}</span>`;box.prepend(el);while(box.children.length>3)box.lastChild.remove();
+  setTimeout(()=>el.remove(),long?9000:5000);try{navigator.vibrate&&navigator.vibrate([30,40,30])}catch(e){}
+  if(LV.snd!==false&&actx){try{if(actx.state==='suspended')actx.resume();const o=actx.createOscillator(),g=actx.createGain(),t0=actx.currentTime;o.frequency.value=880;g.gain.setValueAtTime(.08,t0);g.gain.exponentialRampToValueAtTime(.001,t0+.25);o.connect(g);g.connect(actx.destination);o.start();o.stop(t0+.25)}catch(e){}}}
+const b64u=s=>btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const ub64u=s=>{s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';return decodeURIComponent(escape(atob(s)))};
+const newKey=()=>{const a=new Uint8Array(24);crypto.getRandomValues(a);return Array.from(a,x=>'abcdefghijkmnpqrstuvwxyz23456789'[x%32]).join('')};
+function liveBox(){const on=LV.on,others=onlineNames();
+  if(!LV.url||!LV.key)return `<div class="box live"><h3>Tempo real (online)</h3><p class="small">Com internet, o que um celular lança aparece na hora nos outros, com aviso no topo. Precisa de um banco grátis do Firebase. O passo a passo está aqui embaixo.</p>
+  <div class="fld"><label for="lvU">Endereço do banco Firebase</label><input id="lvU" inputmode="url" autocapitalize="off" autocomplete="off" placeholder="https://seu-projeto-default-rtdb.firebaseio.com" value="${esc(LVU)}"></div>
+  <button class="btn pri" style="width:100%" data-act="lvCreate">Criar sala e conectar</button>
+  <div class="fld" style="margin-top:18px"><label for="lvJ">Ou entre com o convite de outro celular</label><textarea class="cp" id="lvJ" style="min-height:70px" placeholder="Cole o convite (começa com CMDSALA)"></textarea></div>
+  <button class="btn gh" style="width:100%" data-act="lvJoin">Entrar na sala</button>
+  <details class="fbhow"><summary><b>Como criar o banco no Firebase (uns 10 minutos)</b></summary><ol class="how">
+  <li>Abra <b>console.firebase.google.com</b> com sua conta Google e toque em <b>Criar projeto</b>. Pode desligar o Google Analytics.</li>
+  <li>No menu, entre em <b>Realtime Database</b> e toque em <b>Criar banco de dados</b>. Escolha o local e marque <b>Iniciar no modo bloqueado</b>.</li>
+  <li>Na aba <b>Regras</b>, apague tudo, cole o texto abaixo e toque em <b>Publicar</b>.</li></ol>
+  <textarea class="cp" readonly style="min-height:200px">${esc(FB_RULES)}</textarea><button class="lnk" data-act="rulesCopy" style="margin-top:6px">Copiar regras</button>
+  <ol class="how" start="4"><li>Na aba <b>Dados</b>, copie o endereço do topo (termina em <b>firebaseio.com</b> ou <b>firebasedatabase.app</b>) e cole aqui em cima.</li>
+  <li>Toque em <b>Criar sala e conectar</b>. Depois, em <b>Convidar</b>, e mande o convite para os outros.</li></ol></details></div>`;
+  const msg=on?(LST==='on'?(others.length?`Conectado com: <b>${others.map(esc).join(', ')}</b>`:'Conectado. Nenhum outro celular online agora.'):LST==='err'?'Não conectou. Confira a internet, o endereço e as regras do banco. No link do claude.ai o tempo real não funciona: use o app instalado pelo GitHub.':LST==='deny'?'O banco recusou. Confira as regras no Firebase.':LST==='conn'?'Conectando…':'Sem internet. O que você lançar fica guardado aqui e sobe sozinho quando a internet voltar.'):'Desligado neste celular. Os pedidos ficam só aqui até ligar de novo.';
+  return `<div class="box live"><div class="rowc"><h3 style="margin:0">Tempo real</h3><span class="lvb s-${on?LST:'off'}"><i></i>${on?LBL[LST]:'Desligado'}</span></div>
+  <p class="small" style="margin-top:8px">${msg}</p>
+  <label class="tog"><input type="checkbox" id="lvSnd" ${LV.snd!==false?'checked':''}> Som nos avisos</label>
+  <div class="btns" style="margin-top:6px"><button class="btn sun" data-act="lvInvite">Convidar</button>${on?'<button class="btn gh" data-act="lvOff">Desligar</button>':'<button class="btn pri" data-act="lvOn">Ligar</button>'}</div>
+  ${LVINV?`<textarea class="cp" readonly style="min-height:96px;margin-top:10px">${esc(LVINV)}</textarea><div class="btns" style="margin-top:8px"><button class="btn gh" data-act="lvInvCopy">Copiar</button><a class="btn zap" href="${esc('https://wa.me/?text='+encodeURIComponent(LVINV))}" target="_blank" rel="noopener">WhatsApp</a></div><p class="small" style="margin-top:6px">Quem tiver esse convite entra na sala. Mande só para a sua equipe.</p>`:''}
+  <div class="edx"><button class="lnk bad" data-act="lvLeave">Sair da sala</button></div></div>`}
+function lvConnect(url,key,creator){LV={url,key,on:true,snd:LV.snd!==false};saveLV();if(creator)touchCfg();else S.cfgAt=0;save();LVINV='';liveStart();view='sync';render();toast(creator?'Sala criada':'Entrou na sala')}
+
+/* ---- diálogos ---- */
+function obsDlg(k){const l=S.orders[cur].items[k];
+  dlg(`<h2>${esc(l.n)}</h2><p>${esc(l.s)} · ${l.q}× ${brl(l.p)}</p><div class="fld"><label for="obsT">Observação para a cozinha</label><textarea id="obsT" data-focus>${esc(l.o)}</textarea></div><div class="qchips">${OBS.map(o=>`<button data-act="obsChip">${o}</button>`).join('')}</div>
+  <div class="edx"><button class="lnk bad" data-act="delLine" data-k="${k}">${I.trash} Tirar da comanda</button></div><div class="dbtn"><button class="btn gh" data-act="dlgNo">Cancelar</button><button class="btn pri" data-act="dlgOk">Salvar</button></div>`,
+  ()=>{const v=$('#obsT').value.trim();const o=S.orders[cur];if(v&&l.q>0){const same=o.items.find(x=>x!==l&&x.id===l.id&&x.o===v);if(same){same.q+=l.q;same.k=(same.k||0)+(l.k||0);same.ts=Date.now();rmLine(o,o.items.indexOf(l));o.cx=(o.cx||[]).filter(c=>!(c.n===l.n&&c.q===l.k&&c.o===l.o))}else{l.o=v;l.ts=Date.now()}}else{l.o=v;l.ts=Date.now()}save();render()})}
+function moveDlg(){const nums=[];for(let m=1;m<=Math.max(S.mesas,...Object.keys(S.orders).map(Number));m++)if(m!==cur)nums.push(m);
+  dlg(`<h2>Trocar mesa ${cur}</h2><p>Escolha a mesa nova. Se ela já estiver aberta, as comandas são juntadas.</p><div class="pick">${nums.map(m=>`<button class="${S.orders[m]?'on':''}" data-act="moveTo" data-m="${m}">${m}${S.orders[m]?'<small>juntar</small>':''}</button>`).join('')}</div><div class="dbtn"><span></span><button class="btn gh" data-act="dlgNo">Cancelar</button></div>`)}
+function formDlg(title,fields,okLabel,fn){dlg(`<h2>${title}</h2>${fields.map((f,i)=>`<div class="fld"><label for="f${i}">${f[0]}</label><input id="f${i}" ${f[2]?'inputmode="decimal"':''} value="${esc(f[1]||'')}" ${i===0?'data-focus':''} autocomplete="off"></div>`).join('')}<p id="ferr" style="color:var(--bad)"></p><div class="dbtn"><button class="btn gh" data-act="dlgNo">Cancelar</button><button class="btn pri" data-act="dlgOk">${okLabel}</button></div>`,
+  ()=>{const v=fields.map((_,i)=>$('#f'+i).value.trim());const r=fn(v);if(r){$('#ferr').textContent=r;return false}})}
+
+/* ---- eventos ---- */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');
+  if(!actx&&LV.on){try{actx=new(window.AudioContext||window.webkitAudioContext)()}catch(x){}}
+  if(!b){if(e.target.id==='dlg')closeDlg();return}
+  if(['mesasInc','mesasDec','mesas5','addMesa','pctInc','pctDec','newItem','delItem','newSec','delSec','resetMenu'].includes(b.dataset.act))setTimeout(()=>{touchCfg();save()},0);
+  const a=b.dataset.act,m=+b.dataset.m,k=+b.dataset.k,id=b.dataset.id,si=+b.dataset.s,ii=+b.dataset.i;
+  switch(a){
+  case 'nav':view=b.dataset.v;cur=null;unlocked=false;ajOk=false;render();scrollTo(0,0);break;
+  case 'unlockT':if(!S.pin){dlg(`<h2>Totais protegidos</h2><p>Para ver os totais do dia, crie uma senha do dono em <b>Ajustes → Privacidade</b>. Sem senha, os totais ficam escondidos.</p><div class="dbtn"><button class="btn gh" data-act="dlgNo">Fechar</button><button class="btn pri" data-act="goPriv">Criar senha</button></div>`);break}
+    pinDlg('Ver totais do dia','Digite a senha do dono.',()=>{unlocked=true;render();clearTimeout(window._ut);window._ut=setTimeout(()=>{if(unlocked){unlocked=false;if(view==='hist')render()}},120000)});break;
+  case 'lockT':unlocked=false;render();break;
+  case 'ajUnlock':pinDlg('Ajustes','Digite a senha do dono.',()=>{ajOk=true;render()});break;
+  case 'ajLock':ajOk=false;grpOpen.clear();render();scrollTo(0,0);break;
+  case 'goPriv':closeDlg();view='ajustes';render();setTimeout(()=>{const e=$('#privBox');e&&e.scrollIntoView({block:'start'})},50);break;
+  case 'pinSet':{const a=$('#pinN').value.trim(),c=$('#pinC').value.trim();if(!/^\d{4,8}$/.test(a)){toast('A senha precisa ter de 4 a 8 números');break}if(a!==c){toast('As duas senhas não batem');break}S.pin=hashPin(a);save();render();toast('Senha trocada');break}
+  case 'pinChg':pinDlg('Senha atual','Digite a senha atual para trocar.',()=>{S.pin='';save();render();setTimeout(()=>{const e=$('#pinN');e&&e.focus()},80);toast('Digite a senha nova')});break;
+  case 'pinDel':pinDlg('Remover senha','Digite a senha atual. Sem senha, ninguém vê os totais.',()=>{S.pin='';save();render();toast('Senha removida')});break;
+  case 'mesa':cur=m;view='mesa';render();scrollTo(0,0);if(!S.orders[m])openPick();break;
+  case 'back':view='mesas';cur=null;render();break;
+  case 'addItems':openPick();break;
+  case 'linc':{const l=S.orders[cur].items[k];l.q++;l.ts=Date.now();save();render();break}
+  case 'ldec':{const o=S.orders[cur],l=o.items[k];snap();l.q--;l.ts=Date.now();if(l.q<=0){rmLine(o,k);tidy(cur);toast(l.n+' removido',true)}save();render();break}
+  case 'lobs':obsDlg(k);break;
+  case 'obsChip':{const t=$('#obsT');t.value=t.value.trim()?t.value.trim()+', '+b.textContent.toLowerCase():b.textContent;break}
+  case 'delLine':{snap();const o=S.orders[cur],n=o.items[k].n;rmLine(o,k);tidy(cur);save();closeDlg();render();toast(n+' removido',true);break}
+  case 'more':dlg(`<h2>Mesa ${cur}</h2><button class="opt" data-act="move">${I.swap} Trocar ou juntar mesa</button><button class="opt" data-act="kFull">Pedido completo para a cozinha</button><button class="opt" data-act="copyOpen">Copiar conta parcial</button><button class="opt bad" data-act="cancelOrder">${I.trash} Cancelar comanda inteira</button><div class="dbtn"><span></span><button class="btn gh" data-act="dlgNo">Fechar</button></div>`);break;
+  case 'move':moveDlg();break;
+  case 'moveTo':{const o=S.orders[cur];if(!o)break;snap();ens(o);if(S.orders[m]){const t=S.orders[m];ens(t);t.items.push(...o.items);t.ali=[...new Set([...(t.ali||[]),...ids(o)])];t.del=Object.assign(t.del||{},o.del);if(o.cx)t.cx=(t.cx||[]).concat(o.cx);t.t=Math.min(t.t,o.t);t.mt=Date.now()}else{S.orders[m]=o;o.mt=Date.now()}delete S.orders[cur];const from=cur;cur=m;save();closeDlg();render();toast(`Mesa ${from} → mesa ${m}`,true);break}
+  case 'kitchen':kitchenDlg(false);break;
+  case 'ntGo':b.remove();if(m&&!$('#pick').classList.contains('open')&&!$('#fech').classList.contains('open')&&!$('#dlg').classList.contains('open')){cur=m;view='mesa';render();scrollTo(0,0)}break;
+  case 'rulesCopy':copy(FB_RULES,'Regras','Regras copiadas');break;
+  case 'lvCreate':{const u=normUrl($('#lvU').value);LVU=u;if(!okUrl(u)){toast('Endereço inválido. Copie da aba Dados do Firebase');break}
+    const go=()=>lvConnect(u,newKey(),true);if(!S.dev){formDlg('Nome deste celular',[['Como os outros vão te ver (ex.: João)']],'Salvar',([n])=>{if(!n)return'Coloque um nome.';S.dev=n.slice(0,24);save();setTimeout(go,50)})}else go();break}
+  case 'lvJoin':{const t=$('#lvJ').value.replace(/\s+/g,'');const mm=t.match(/CMDSALA\.([A-Za-z0-9_-]+)/);let c=null;try{c=mm&&JSON.parse(ub64u(mm[1]))}catch(x){}
+    if(!c||!okUrl(c.u)||!c.k||c.k.length<20){toast('Convite inválido. Cole a mensagem inteira');break}
+    const go=()=>lvConnect(c.u,c.k,false);if(!S.dev){formDlg('Nome deste celular',[['Como os outros vão te ver (ex.: Maria)']],'Salvar',([n])=>{if(!n)return'Coloque um nome.';S.dev=n.slice(0,24);save();setTimeout(go,50)})}else go();break}
+  case 'lvOn':liveStart();render();break;
+  case 'lvOff':liveStop();render();toast('Tempo real desligado neste celular');break;
+  case 'lvInvite':LVINV=`Convite para a sala das comandas${S.name?' de '+S.name:''}\nAbra o app em Sincronizar → Tempo real → Entrar na sala e cole:\nCMDSALA.${b64u(JSON.stringify({u:LV.url,k:LV.key}))}`;render();setTimeout(()=>{const x=$('.live textarea');x&&x.scrollIntoView({block:'center',behavior:'smooth'})},50);break;
+  case 'lvInvCopy':copy(LVINV,'Convite','Convite copiado');break;
+  case 'lvLeave':ask('Sair da sala?','Este celular para de receber e mandar pedidos online. Os pedidos que já estão aqui continuam.','Sair',true,()=>{liveStop();LV={snd:LV.snd};saveLV();R=null;LVINV='';render()});break;
+  case 'syTog':SY.ex.has(m)?SY.ex.delete(m):SY.ex.add(m);SY.out='';render();break;
+  case 'syGen':if(!S.dev){formDlg('Nome deste celular',[['Como o outro celular vai te ver (ex.: João)']],'Salvar e gerar',([n])=>{if(!n)return'Coloque um nome.';S.dev=n.slice(0,24);save();setTimeout(()=>{view='sync';genCode()},50)});break}view='sync';genCode();break;
+  case 'syCopy':copy(SY.out,'Código','Código copiado — mande no WhatsApp');break;
+  case 'syPaste':if(navigator.clipboard&&navigator.clipboard.readText)navigator.clipboard.readText().then(t=>{SY.code=t;readCode()},()=>{$('#syIn').focus();toast('Segure no campo e toque em Colar')});else{$('#syIn').focus();toast('Segure no campo e toque em Colar')}break;
+  case 'syRead':SY.code=$('#syIn').value;readCode();break;
+  case 'syCancel':SY.P=null;SY.W=null;SY.log=null;render();break;
+  case 'syApply':{if(!SY.W)break;snap();const from=SY.P.from;S=SY.W;save();SY.P=null;SY.W=null;SY.log=null;SY.code='';SY.out='';SY.done=from;render();scrollTo(0,0);toast('Mesas atualizadas',true);break}
+  case 'kFull':kitchenDlg(true);break;
+  case 'kCopy':{const t=$('#kT').value;const ok=()=>{markSent();closeDlg();render();toast('Copiado — cole no WhatsApp da cozinha')};
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(ok,()=>{$('#kT').select();toast('Segure no texto e copie')});else{$('#kT').select();toast('Segure no texto e copie')}break}
+  case 'kWa':markSent();setTimeout(()=>{closeDlg();render()},400);break;
+  case 'kMark':markSent();closeDlg();render();toast('Marcado como enviado');break;
+  case 'copyOpen':closeDlg();save();copy(billText(),'Conta da mesa '+cur,'Conta copiada');break;
+  case 'cancelOrder':ask('Cancelar comanda?',`Todos os itens da mesa ${cur} vão ser apagados.`,'Apagar tudo',true,()=>{snap();markGone(S.orders[cur],null);delete S.orders[cur];save();const m0=cur;view='mesas';cur=null;render();toast(`Comanda da mesa ${m0} cancelada`,true)});break;
+  case 'add':{const[it,s]=findItem(id);if(!it||!it.on)break;addLine(cur,it,s);updRow(id,true);buzz();break}
+  case 'pdec':decLine(cur,id);updRow(id);break;
+  case 'pickDone':closePick();break;
+  case 'jump':{const s=$('#sec'+si);if(s)$('#pickBody').scrollTo({top:s.offsetTop-4,behavior:'smooth'});else{$('#q').value='';renderPick();const s2=$('#sec'+si);s2&&$('#pickBody').scrollTo({top:s2.offsetTop-4})}break}
+  case 'avulso':formDlg('Item avulso',[['Nome do item',$('#q').value],['Preço (R$)','',1]],'Adicionar',([n,p])=>{const c=parseBRL(p);if(!n)return'Coloque o nome.';if(isNaN(c)||c<=0)return'Preço inválido.';addLine(cur,{id:'x'+Date.now(),n,p:c},{t:'Avulso',kz:true});pickBar();renderPick();toast(n+' adicionado')});break;
+  case 'closeBill':openClose();break;
+  case 'fechX':$('#fech').classList.remove('open');lock();break;
+  case 'pay':F.pay=F.pay===b.dataset.v?'':b.dataset.v;save();renderClose();break;
+  case 'mode':F.mode=b.dataset.v;save();renderClose();break;
+  case 'eqInc':F.n=Math.min(99,F.n+1);save();renderClose();break;
+  case 'eqDec':F.n=Math.max(2,F.n-1);F.parts.length=Math.min(F.parts.length,F.n);save();renderClose();break;
+  case 'partPay':F.parts[ii]=F.parts[ii]===b.dataset.v?'':b.dataset.v;save();renderClose();break;
+  case 'ppSel':F.cur=ii;save();renderClose();break;
+  case 'ppAdd':F.people.push(mkP(F.people.length));F.cur=F.people.length-1;save();renderClose();break;
+  case 'ppRen':{const q=F.people[F.cur];formDlg('Nome da pessoa',[['Nome',q.n]],'Salvar',([n])=>{if(!n)return'Coloque um nome.';q.n=n.slice(0,24);save();renderClose()});break}
+  case 'ppDel':{const q=F.people[F.cur];const go=()=>{F.people.splice(F.cur,1);F.cur=Math.max(0,F.cur-1);save();renderClose()};Object.keys(q.a).length?ask(`Remover ${esc(q.n)}?`,'Os itens dela voltam para "falta separar".','Remover',true,go):go();break}
+  case 'ppInc':{const l=S.orders[cur].items.find(x=>x.u===b.dataset.u);if(l&&remU(l)>0){const q=F.people[F.cur];q.a[l.u]=(q.a[l.u]||0)+1;save();renderClose();buzz()}break}
+  case 'ppDec':{const q=F.people[F.cur],u=b.dataset.u;if(q.a[u]>0){q.a[u]--;if(!q.a[u])delete q.a[u];save();renderClose()}break}
+  case 'ppShare':{const l=S.orders[cur].items.find(x=>x.u===b.dataset.u);if(l&&remU(l)>0){SH={u:l.u,q:remU(l),ids:new Set(F.people.map(p=>p.id))};drawShare()}break}
+  case 'shTog':{const i=b.dataset.id;SH.ids.has(i)?SH.ids.delete(i):SH.ids.add(i);drawShare();break}
+  case 'shInc':{const l=S.orders[cur].items.find(x=>x.u===SH.u);if(l&&SH.q<remU(l))SH.q++;drawShare();break}
+  case 'shDec':SH.q=Math.max(1,SH.q-1);drawShare();break;
+  case 'ppUnshare':F.shr=F.shr.filter(g=>g.u!==b.dataset.u);save();renderClose();break;
+  case 'ppRest':{const q=F.people[F.cur];S.orders[cur].items.forEach(l=>{const r=remU(l);if(r>0)q.a[l.u]=(q.a[l.u]||0)+r});save();renderClose();toast('Resto foi para '+q.n);break}
+  case 'ppPay':{const q=F.people[ii];q.pay=q.pay===b.dataset.v?'':b.dataset.v;save();renderClose();break}
+  case 'copyBill':copy(billText(),'Conta da mesa '+cur,'Conta copiada');break;
+  case 'confirmClose':{const o=S.orders[cur];if(!o)break;prepSplit(o);
+    const go=()=>{snap();const s=subOf(o),t=F.svc?svc(s):0;let parts=null,pay=F.pay,ppl=1;
+      if(F.mode==='eq'){parts=alloc(s+t,Array(F.n).fill(1)).map((v,i)=>({n:'Parte '+(i+1),v,pay:F.parts[i]||''}));ppl=F.n}
+      if(F.mode==='pp'){const C=calcPeople(o);parts=F.people.map((q,i)=>({n:q.n,v:C.sub[i]+C.sv[i],pay:q.pay||''}));ppl=F.people.length;if(C.left>0)parts.push({n:'Não separado',v:C.left+t-C.sv.reduce((a,x)=>a+x,0),pay:''})}
+      if(parts)pay=[...new Set(parts.map(x=>x.pay).filter(Boolean))].join(' + ');
+      ens(o);const items=o.items.map(({sp,...r})=>r);markGone(o,o.items.map(l=>l.u));
+      S.hist.push({id:Date.now(),m:cur,t0:o.t,t1:Date.now(),items,sub:s,svc:t,pct:S.pct,pay,ppl,parts,by:S.dev||'',bd:S.did,oid:o.id});delete S.orders[cur];save();
+      $('#fech').classList.remove('open');lock();const m0=cur;view='mesas';cur=null;render();scrollTo(0,0);toast(`Mesa ${m0} fechada · ${brl(s+t)}`,true)};
+    if(F.mode==='pp'&&calcPeople(o).left>0)ask('Ainda falta separar',`Tem ${brl(calcPeople(o).left)} em itens sem dono. Fechar mesmo assim?`,'Fechar',false,go);else go();break}
+  case 'reopen':{const h=S.hist.find(x=>x.id===+id);if(!h)break;if(S.orders[h.m]){toast(`A mesa ${h.m} está ocupada agora`);break}
+    ask(`Reabrir mesa ${h.m}?`,'A conta sai das fechadas e volta como comanda aberta.','Reabrir',false,()=>{snap();const now=Date.now();S.orders[h.m]={id:uid(),t:h.t0,mt:now,del:{},items:h.items.map(l=>({...l,u:uid(),ts:now,bd:S.did}))};S.hgone[h.id]=now;S.hist=S.hist.filter(x=>x!==h);save();cur=h.m;view='mesa';render();scrollTo(0,0)});break}
+  case 'clearHist':guard(()=>ask('Limpar histórico?','Todas as contas fechadas vão ser apagadas deste celular.','Limpar',true,()=>{snap();S.hist.forEach(h=>S.hgone[h.id]=Date.now());S.hist=[];save();render();toast('Histórico limpo',true)}));break;
+  case 'addMesa':snap();S.mesas=Math.min(200,S.mesas+1);save();render();toast(`Mesa ${S.mesas} criada`,true);break;
+  case 'mesasInc':S.mesas=Math.min(200,S.mesas+1);save();render();break;
+  case 'mesasDec':{const m=S.mesas;if(m<=1)break;if(S.orders[m]){toast(`A mesa ${m} está aberta, feche antes`);break}S.mesas=m-1;save();render();break}
+  case 'mesas5':S.mesas=Math.min(200,S.mesas+5);save();render();toast(`Agora são ${S.mesas} mesas`);break;
+  case 'pctInc':S.pct=Math.min(30,S.pct+1);save();render();break;
+  case 'pctDec':S.pct=Math.max(0,S.pct-1);save();render();break;
+  case 'newItem':formDlg('Novo item em '+esc(S.menu[si].t),[['Nome'],['Preço (R$)','',1],['Número no cardápio (opcional)'],['Descrição (opcional)']],'Adicionar',([n,p,c,d])=>{const v=parseBRL(p);if(!n)return'Coloque o nome.';if(isNaN(v)||v<0)return'Preço inválido.';S.menu[si].items.push({id:'n'+Date.now(),c,n,p:v,d,on:true});openSecs.add(si);save();render()});break;
+  case 'delItem':{const it=S.menu[si].items[ii];ask('Excluir item?',`${esc(it.n)} sai do cardápio. Comandas abertas não mudam.`,'Excluir',true,()=>{snap();S.menu[si].items.splice(ii,1);save();render();toast('Item excluído',true)});break}
+  case 'newSec':formDlg('Nova seção',[['Nome da seção (ex.: Chopp)']],'Criar',([n])=>{if(!n)return'Coloque o nome.';S.menu.push({t:n,note:'',items:[]});openSecs.add(S.menu.length-1);save();render()});break;
+  case 'delSec':ask('Excluir seção?',`${esc(S.menu[si].t)} e os ${S.menu[si].items.length} itens dela saem do cardápio.`,'Excluir',true,()=>{snap();S.menu.splice(si,1);openSecs.clear();save();render();toast('Seção excluída',true)});break;
+  case 'resetMenu':ask('Restaurar cardápio?','Volta o cardápio original com os preços da foto. Suas mudanças no cardápio são perdidas.','Restaurar',true,()=>{snap();S.menu=buildMenu();save();render();toast('Cardápio restaurado',true)});break;
+  case 'bkCopy':copy(JSON.stringify(S),'Backup','Backup copiado');break;
+  case 'bkLoad':dlg(`<h2>Restaurar backup</h2><p>Cole o texto do backup. Isso substitui tudo o que está no celular.</p><textarea class="cp" id="bkT" data-focus></textarea><p id="ferr" style="color:var(--bad)"></p><div class="dbtn"><button class="btn gh" data-act="dlgNo">Cancelar</button><button class="btn bad" data-act="dlgOk">Restaurar</button></div>`,()=>{try{const o=JSON.parse($('#bkT').value);if(!o||!Array.isArray(o.menu))throw 0;snap();const d0=S.did;S=Object.assign(defaults(),migrate(o));S.did=d0;touchCfg();save();render();toast('Backup restaurado',true)}catch(err){$('#ferr').textContent='Esse texto não é um backup válido.';return false}});break;
+  case 'dlgOk':if(D.ok&&D.ok()===false)break;closeDlg();break;
+  case 'dlgNo':closeDlg();break;
+  case 'undo':if(undoSnap){S=JSON.parse(undoSnap);undoSnap=null;save();render();$('#toast').classList.remove('on')}break;
+  }
+});
+document.addEventListener('change',e=>{const t=e.target;
+  if(t.id==='svcT'){F.svc=t.checked;save();renderClose();return}
+  if(t.id==='lvSnd'){LV.snd=t.checked;saveLV();return}
+  if(t.dataset.set==='name'||t.dataset.set==='zap'||t.dataset.sf||t.dataset.f||t.dataset.sk!==undefined)touchCfg();
+  if(t.dataset.set==='name'){S.name=t.value.trim();save();return}
+  if(t.dataset.set==='dev'){S.dev=t.value.trim().slice(0,24);save();toast(S.dev?'Nome salvo':'Sem nome');render();return}
+  if(t.id==='syH'){SY.h=t.checked;SY.out='';render();return}
+  if(t.id==='syM'){SY.menu=t.checked;SY.out='';render();return}
+  if(t.dataset.set==='zap'){let d=t.value.replace(/\D/g,'');if(d.length===10||d.length===11)d='55'+d;S.zap=d;t.value=d;save();toast(d?'WhatsApp da cozinha salvo':'Sem número fixo');return}
+  if(t.dataset.sk!==undefined){S.menu[+t.dataset.sk].kz=t.checked;save();toast(t.checked?'Vai para a cozinha':'Não vai para a cozinha');return}
+  if(t.dataset.sf){S.menu[+t.dataset.s].t=t.value.trim()||S.menu[+t.dataset.s].t;save();render();return}
+  if(t.dataset.f){const it=S.menu[+t.dataset.s].items[+t.dataset.i];const f=t.dataset.f;
+    if(f==='n'){it.n=t.value.trim()||it.n;t.value=it.n}
+    else if(f==='p'){const c=parseBRL(t.value);if(!isNaN(c)&&c>=0){it.p=c;toast('Preço salvo')}t.value=num(it.p)}
+    else if(f==='on'){it.on=t.checked;toast(it.on?it.n+' disponível':it.n+' em falta')}
+    save()}});
+document.addEventListener('toggle',e=>{const d=e.target;if(d.classList&&d.classList.contains('grp'))d.open?grpOpen.add(d.dataset.g):grpOpen.delete(d.dataset.g);if(d.classList&&d.classList.contains('tk')&&d.open)document.querySelectorAll('.tk[open]').forEach(x=>{if(x!==d)x.open=false});if(d.classList&&d.classList.contains('ed')){const i=+d.dataset.sec;d.open?openSecs.add(i):openSecs.delete(i)}},true);
+document.addEventListener('input',e=>{if(e.target.id==='syIn')SY.code=e.target.value;if(e.target.id==='kT'){const a=$('#kWa');if(a)a.href=waHref(e.target.value)}});
+$('#q').addEventListener('input',()=>{renderPick();$('#pickBody').scrollTop=0});
+let rq=0;$('#pickBody').addEventListener('scroll',()=>{if(rq)return;rq=requestAnimationFrame(()=>{rq=0;activeChip()})},{passive:true});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&$('#dlg').classList.contains('open')&&e.target.tagName==='INPUT'){e.preventDefault();const ok=$('#dlgBox [data-act="dlgOk"]');ok&&ok.click()}
+  if(e.key==='Escape'){if($('#dlg').classList.contains('open'))closeDlg();else if($('#fech').classList.contains('open')){$('#fech').classList.remove('open');lock()}else if($('#pick').classList.contains('open'))closePick()}});
+if(LV.on&&LV.url&&LV.key)liveStart();
+window.addEventListener('online',()=>{if(LV.on){if(!ES||ES.readyState===2)liveStart();else schedPush()}});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&LV.on&&(!ES||ES.readyState===2))liveStart()});
+setInterval(()=>{if((view==='mesas'||view==='mesa')&&!$('#dlg').classList.contains('open')&&!document.body.classList.contains('lock'))render()},30000);
+render();
+}
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
