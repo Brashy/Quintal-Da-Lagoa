@@ -130,6 +130,11 @@ svg{width:22px;height:22px;flex:none}
 .box .lvb{background:var(--soft);color:var(--ink)}
 .live{border:1.5px solid var(--ember)}
 .fbhow{margin-top:16px;border-top:1px solid var(--line);padding-top:10px}.fbhow summary{cursor:pointer;min-height:40px;display:flex;align-items:center}
+.gate{position:fixed;inset:0;z-index:35;background:var(--coal);display:none;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));overflow-y:auto}
+.gate.open{display:flex}
+.gbox{background:var(--card);color:var(--ink);width:100%;max-width:420px;border-radius:20px;padding:24px 20px;text-align:left}
+.gbox>svg{width:36px;height:36px;color:var(--ember2)}.gbox h2{margin:8px 0 4px;font-size:32px;line-height:1.05}.gbox>p{color:var(--mute);margin:0 0 8px}
+.gerr{color:var(--bad);font-weight:600;min-height:1.2em;margin:4px 0 10px}
 .bandp{margin:0;font-size:15px;color:#fff}
 .okp{background:var(--paid);border:1.5px solid var(--okc);border-radius:16px;padding:14px;margin:12px 0}
 .warnp{background:light-dark(#fff4e0,#33260f);color:light-dark(#7a4b00,#ffcf7a);border-radius:12px;padding:8px 12px;font-size:14px;margin:6px 0}
@@ -295,6 +300,7 @@ textarea.cp{width:100%;min-height:200px;font:14px/1.4 ui-monospace,monospace;bor
 
 <div class="dlg" id="dlg" role="dialog" aria-modal="true"><div class="dbox" id="dlgBox"></div></div>
 <div id="ntf" aria-live="polite"></div>
+<div id="gate" class="gate" role="dialog" aria-modal="true" aria-label="Entrar na sala da equipe"></div>
 <div id="toast" role="status"><span id="toastT"></span><button data-act="undo" hidden>Desfazer</button></div>
 
 <script>
@@ -757,7 +763,39 @@ function note(m,tx,long){const box=$('#ntf');const el=document.createElement('bu
 const b64u=s=>btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 const ub64u=s=>{s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';return decodeURIComponent(escape(atob(s)))};
 const newKey=()=>{const a=new Uint8Array(24);crypto.getRandomValues(a);return Array.from(a,x=>'abcdefghijkmnpqrstuvwxyz23456789'[x%32]).join('')};
-function liveBox(){const on=LV.on,others=onlineNames();
+/* ---- sala da equipe (endereço no config.json, chave derivada da senha da equipe) ---- */
+let CFG=(()=>{try{return JSON.parse(localStorage.getItem('comandas-cfg'))}catch(e){return null}})();
+async function deriveKey(pw){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('comandas-sala-v1|'+pw));return Array.from(new Uint8Array(b),x=>x.toString(16).padStart(2,'0')).join('')}
+async function loadCfg(){try{const r=await fetch('config.json?t='+Date.now(),{cache:'no-store'});if(r.ok){const c=await r.json();const u=normUrl(c&&c.firebase);CFG=okUrl(u)?{url:u}:null;try{CFG?localStorage.setItem('comandas-cfg',JSON.stringify(CFG)):localStorage.removeItem('comandas-cfg')}catch(e){}}}catch(e){}afterCfg()}
+function afterCfg(){if(!CFG)return;
+  if(LV.team&&LV.key&&LV.url!==CFG.url){LV.url=CFG.url;saveLV();if(LV.on)liveStart()}
+  if(!LV.key&&!LV.skip)showGate();if(view==='sync')render()}
+function showGate(msg){const g=$('#gate');g.innerHTML=`<div class="gbox">${I.lock}<h2>${esc(S.name||'Comandas')}</h2><p>Digite a senha da equipe para ver e lançar as comandas junto com os outros celulares.</p>
+  ${S.dev?'':'<div class="fld"><label for="gnm">Seu nome (aparece nos itens que você lançar)</label><input id="gnm" autocomplete="name" placeholder="Ex.: João"></div>'}
+  <div class="fld"><label for="gpw">Senha da equipe</label><input id="gpw" type="password" autocomplete="current-password" data-focus></div>
+  <p id="gerr" class="gerr">${msg?esc(msg):''}</p><div id="gnew"></div>
+  <button class="btn pri" style="width:100%" data-act="gLogin">Entrar</button>
+  <button class="lnk" style="width:100%;justify-content:center;margin-top:10px;border:0" data-act="gSkip">Agora não, usar só neste celular</button></div>`;
+  g.classList.add('open');setTimeout(()=>{const f=$('#gnm')||$('#gpw');f&&f.focus()},80)}
+const hideGate=()=>$('#gate').classList.remove('open');
+async function gLogin(create){const pw=($('#gpw').value||'').trim(),nm=$('#gnm')?$('#gnm').value.trim():S.dev,er=$('#gerr');
+  if(!nm){er.textContent='Coloque o seu nome.';return}if(!pw){er.textContent='Digite a senha da equipe.';return}
+  if(!S.dev){S.dev=nm.slice(0,24);save()}
+  er.textContent='Entrando…';const key=await deriveKey(pw),url=CFG.url;let meta=null;
+  try{const r=await fetch(`${url}/salas/${key}/meta.json`);if(r.status===401||r.status===403){er.textContent='O banco recusou. Confira as regras no Firebase.';return}if(!r.ok)throw 0;meta=await r.json()}
+  catch(e){er.textContent='Sem internet ou endereço do banco errado. Tente de novo.';return}
+  if(!meta&&!create){er.textContent='Senha errada, ou a sala ainda não foi criada.';$('#gnew').innerHTML='<button class="lnk" style="width:100%;justify-content:center;margin:0 0 10px" data-act="gCreate">Sou o dono: criar a sala com essa senha</button>';return}
+  if(!meta){try{const r=await fetch(`${url}/salas/${key}.json`,{method:'PATCH',body:JSON.stringify({meta:{criada:Date.now(),por:S.dev||''}})});if(!r.ok)throw 0}catch(e){er.textContent='Não deu para criar a sala. Confira a internet e as regras.';return}}
+  LV={url,key,on:true,team:true,snd:LV.snd!==false};saveLV();if(meta)S.cfgAt=0;else touchCfg();save();hideGate();liveStart();render();toast(meta?'Conectado à sala da equipe':'Sala criada. Os outros entram com a mesma senha')}
+function teamBox(){const on=LV.on,others=onlineNames();
+  if(!LV.key)return `<div class="box live"><h3>Sala da equipe</h3><p class="small">Com a senha da equipe, este celular vê na hora tudo que os outros lançam, e os outros veem o que ele lançar.</p><button class="btn pri" style="width:100%" data-act="gOpen">Entrar com a senha da equipe</button></div>`;
+  const msg=on?(LST==='on'?(others.length?`Conectado com: <b>${others.map(esc).join(', ')}</b>`:'Conectado. Nenhum outro celular online agora.'):LST==='err'?'Não conectou. Confira a internet e o endereço no config.json.':LST==='deny'?'O banco recusou. Confira as regras no Firebase.':LST==='conn'?'Conectando…':'Sem internet. O que você lançar fica guardado aqui e sobe sozinho quando a internet voltar.'):'Desligado neste celular. Os pedidos ficam só aqui até ligar de novo.';
+  return `<div class="box live"><div class="rowc"><h3 style="margin:0">Sala da equipe</h3><span class="lvb s-${on?LST:'off'}"><i></i>${on?LBL[LST]:'Desligado'}</span></div>
+  <p class="small" style="margin-top:8px">${msg}</p><p class="small">Outro celular entra abrindo este mesmo site e digitando a senha da equipe.</p>
+  <label class="tog"><input type="checkbox" id="lvSnd" ${LV.snd!==false?'checked':''}> Som nos avisos</label>
+  <div class="btns" style="margin-top:6px">${on?'<button class="btn gh" data-act="lvOff">Desligar</button>':'<button class="btn pri" data-act="lvOn">Ligar</button>'}<button class="btn gh" data-act="lvLeave">Sair da sala</button></div></div>`}
+
+function liveBox(){if(CFG)return teamBox();const on=LV.on,others=onlineNames();
   if(!LV.url||!LV.key)return `<div class="box live"><h3>Tempo real (online)</h3><p class="small">Com internet, o que um celular lança aparece na hora nos outros, com aviso no topo. Precisa de um banco grátis do Firebase. O passo a passo está aqui embaixo.</p>
   <div class="fld"><label for="lvU">Endereço do banco Firebase</label><input id="lvU" inputmode="url" autocapitalize="off" autocomplete="off" placeholder="https://seu-projeto-default-rtdb.firebaseio.com" value="${esc(LVU)}"></div>
   <button class="btn pri" style="width:100%" data-act="lvCreate">Criar sala e conectar</button>
@@ -830,7 +868,11 @@ document.addEventListener('click',e=>{
   case 'lvOff':liveStop();render();toast('Tempo real desligado neste celular');break;
   case 'lvInvite':LVINV=`Convite para a sala das comandas${S.name?' de '+S.name:''}\nAbra o app em Sincronizar → Tempo real → Entrar na sala e cole:\nCMDSALA.${b64u(JSON.stringify({u:LV.url,k:LV.key}))}`;render();setTimeout(()=>{const x=$('.live textarea');x&&x.scrollIntoView({block:'center',behavior:'smooth'})},50);break;
   case 'lvInvCopy':copy(LVINV,'Convite','Convite copiado');break;
-  case 'lvLeave':ask('Sair da sala?','Este celular para de receber e mandar pedidos online. Os pedidos que já estão aqui continuam.','Sair',true,()=>{liveStop();LV={snd:LV.snd};saveLV();R=null;LVINV='';render()});break;
+  case 'gLogin':gLogin(false);break;
+  case 'gCreate':pinDlg('Criar a sala','Digite a senha do dono para criar a sala da equipe.',()=>{setTimeout(()=>gLogin(true),50)});break;
+  case 'gSkip':LV.skip=true;saveLV();hideGate();break;
+  case 'gOpen':LV.skip=false;saveLV();showGate();break;
+  case 'lvLeave':ask('Sair da sala?','Este celular para de receber e mandar pedidos online. Os pedidos que já estão aqui continuam.','Sair',true,()=>{liveStop();LV={snd:LV.snd,skip:true};saveLV();R=null;LVINV='';render()});break;
   case 'syTog':SY.ex.has(m)?SY.ex.delete(m):SY.ex.add(m);SY.out='';render();break;
   case 'syGen':if(!S.dev){formDlg('Nome deste celular',[['Como o outro celular vai te ver (ex.: João)']],'Salvar e gerar',([n])=>{if(!n)return'Coloque um nome.';S.dev=n.slice(0,24);save();setTimeout(()=>{view='sync';genCode()},50)});break}view='sync';genCode();break;
   case 'syCopy':copy(SY.out,'Código','Código copiado — mande no WhatsApp');break;
@@ -922,9 +964,11 @@ document.addEventListener('input',e=>{if(e.target.id==='syIn')SY.code=e.target.v
 $('#q').addEventListener('input',()=>{renderPick();$('#pickBody').scrollTop=0});
 let rq=0;$('#pickBody').addEventListener('scroll',()=>{if(rq)return;rq=requestAnimationFrame(()=>{rq=0;activeChip()})},{passive:true});
 document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&$('#gate').classList.contains('open')&&e.target.tagName==='INPUT'){e.preventDefault();gLogin(false);return}
   if(e.key==='Enter'&&$('#dlg').classList.contains('open')&&e.target.tagName==='INPUT'){e.preventDefault();const ok=$('#dlgBox [data-act="dlgOk"]');ok&&ok.click()}
   if(e.key==='Escape'){if($('#dlg').classList.contains('open'))closeDlg();else if($('#fech').classList.contains('open')){$('#fech').classList.remove('open');lock()}else if($('#pick').classList.contains('open'))closePick()}});
 if(LV.on&&LV.url&&LV.key)liveStart();
+loadCfg();
 window.addEventListener('online',()=>{if(LV.on){if(!ES||ES.readyState===2)liveStart();else schedPush()}});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&LV.on&&(!ES||ES.readyState===2))liveStart()});
 setInterval(()=>{if((view==='mesas'||view==='mesa')&&!$('#dlg').classList.contains('open')&&!document.body.classList.contains('lock'))render()},30000);
