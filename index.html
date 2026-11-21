@@ -308,7 +308,7 @@ textarea.cp{width:100%;min-height:200px;font:14px/1.4 ui-monospace,monospace;bor
 const KEY='comandas-salao-v1';
 const LKEY='comandas-live-v1';
 let LV=(()=>{try{return JSON.parse(localStorage.getItem(LKEY))||{}}catch(e){return{}}})();
-let R=null,ES=null,LST='off',inflight=false,again=false,pushT=0,retryT=0,presT=0,recT=0,firstLoad=true,actx=null,LVINV='',LVU='';
+let pendR=false,R=null,ES=null,LST='off',inflight=false,again=false,pushT=0,retryT=0,presT=0,recT=0,firstLoad=true,actx=null,LVINV='',LVU='';
 const BASE=[
 ['Almoço e jantinha','Todos os pratos acompanham arroz, feijão, vinagrete, farofa, molho de alho e batata.',[['01','Cordão do filé mignon',3599],['02','Linguiça suína',3199],['03','Linguiça mineira',3299],['04','Linguiça apimentada',3390],['05','Kafta com queijo',3399],['06','Kafta',3290],['07','Peito de frango',3199],['08','Medalhão de frango',3699],['09','Coração',3299],['10','Queijo coalho',3190],['11','Medalhão de carne',3899],['12','Sobrecoxa',3295],['13','Cuiabana suína',3399],['14','Panceta',3299],['15','Cupim com queijo',3599]]],
 ['Executivos','Almoço executivo.',[['21','Parmegiana de frango',4599,'Filé à parmegiana, arroz e fritas · 1 pessoa'],['22','Parmegiana de carne',5199,'Filé à parmegiana, arroz e fritas · 1 pessoa'],['23','Contrafilé',4999,'Arroz, feijão, vinagrete e fritas · 1 pessoa'],['24','Costela no bafo',18599,'Arroz, fritas, vinagrete e feijão tropeiro · 2 pessoas']]],
@@ -387,9 +387,21 @@ function kitchenDlg(full){const t=kTicket(full);
   <div class="edx">${full?'':'<button class="lnk" data-act="kFull">Pedido completo</button>'}<button class="lnk" data-act="kMark">Já avisei, marcar enviado</button><button class="lnk" data-act="dlgNo">Cancelar</button></div>`)}
 function decLine(m,id){const o=S.orders[m];if(!o)return;for(let k=o.items.length-1;k>=0;k--){const l=o.items[k];if(l.id===id){l.q--;l.ts=Date.now();if(l.q<=0)rmLine(o,k);break}}tidy(m);save()}
 const snap=()=>{undoSnap=JSON.stringify(S)};
+function doUndo(){if(!undoSnap)return;const old=JSON.parse(undoSnap),now=S;undoSnap=null;
+  if(LV.on){const t=Date.now(),curU=new Set(),curIds=new Map();
+    Object.entries(now.orders).forEach(([m,o])=>{ens(o);o.items.forEach(l=>curU.add(l.u));ids(o).forEach(i=>curIds.set(i,+m))});
+    for(const[m,o]of Object.entries(old.orders)){ens(o);const hit=ids(o).find(i=>curIds.has(i));
+      if(!hit){o.id=uid();o.ali=[];o.del={};o.mt=t;o.items.forEach(l=>{l.u=uid();l.ts=t})}
+      else{o.items.forEach(l=>{if(!curU.has(l.u)){l.u=uid();l.ts=t}});if(curIds.get(hit)!==+m)o.mt=t}}
+    old.gone=Object.assign({},old.gone,now.gone);old.hgone=Object.assign({},old.hgone,now.hgone);
+    const oh=new Set(old.hist.map(h=>String(h.id)));now.hist.forEach(h=>{if(!oh.has(String(h.id)))old.hgone[h.id]=t});
+    const nh=new Set(now.hist.map(h=>String(h.id)));old.hist.forEach((h,i)=>{if(!nh.has(String(h.id))&&now.hgone[h.id])h.id=t+i});
+    if(JSON.stringify([old.menu,old.pct,old.mesas,old.name,old.zap])!==JSON.stringify([now.menu,now.pct,now.mesas,now.name,now.zap]))old.cfgAt=t;
+    old.sync=now.sync}
+  S=old;save();render();$('#toast').classList.remove('on')}
 
 function toast(t,undo){const el=$('#toast');$('#toastT').textContent=t;el.querySelector('button').hidden=!undo;el.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>{el.classList.remove('on');undoSnap=null},undo?5000:1800)}
-function dlg(html,ok){$('#dlgBox').innerHTML=html;$('#dlg').classList.add('open');D.ok=ok||null;setTimeout(()=>{const f=$('#dlgBox [data-focus]');if(f){f.focus();if(f.select)f.select()}},60)}
+function dlg(html,ok){D.seq=(D.seq||0)+1;$('#dlgBox').innerHTML=html;$('#dlg').classList.add('open');D.ok=ok||null;setTimeout(()=>{const f=$('#dlgBox [data-focus]');if(f){f.focus();if(f.select)f.select()}},60)}
 function closeDlg(){$('#dlg').classList.remove('open');D.ok=null}
 function ask(title,text,okLabel,bad,fn){dlg(`<h2>${title}</h2><p>${text}</p><div class="dbtn"><button class="btn gh" data-act="dlgNo">Voltar</button><button class="btn ${bad?'bad':'pri'}" data-act="dlgOk">${okLabel}</button></div>`,fn)}
 function showText(title,txt){dlg(`<h2>${title}</h2><p>Selecione o texto e copie.</p><textarea class="cp" readonly data-focus>${esc(txt)}</textarea><div class="dbtn"><span></span><button class="btn pri" data-act="dlgNo">Ok</button></div>`)}
@@ -412,8 +424,8 @@ function vMesas(){
 }
 
 function vMesa(){
-  const o=S.orders[cur],s=subOf(o);
-  const lines=o?o.items.map((l,k)=>`<div class="line"><div class="step"><button data-act="ldec" data-k="${k}" aria-label="Tirar um">${I.minus}</button><b>${l.q}</b><button data-act="linc" data-k="${k}" aria-label="Mais um">${I.plus}</button></div><button class="nmb" data-act="lobs" data-k="${k}"><span class="sl">${esc(l.s)}${l.bd&&l.bd!==S.did?` · <b class="byo">por ${esc(l.by||'outro celular')}</b>`:''}</span><span class="nm">${esc(l.n)}</span>${pend(l)>0?`<span class="kn">${pend(l)} p/ cozinha</span>`:isK(l)&&l.k?'<span class="ks">Na cozinha</span>':''}${l.o?`<span class="ob">${esc(l.o)}</span>`:'<span class="obh">+ observação</span>'}</button><div class="pr">${brl(l.p*l.q)}${l.q>1?`<small>${brl(l.p)} cada</small>`:''}</div></div>`).join(''):'';
+  const o=S.orders[cur],s=subOf(o);if(o)ens(o);
+  const lines=o?o.items.map((l,k)=>`<div class="line"><div class="step"><button data-act="ldec" data-u="${l.u}" aria-label="Tirar um">${I.minus}</button><b>${l.q}</b><button data-act="linc" data-u="${l.u}" aria-label="Mais um">${I.plus}</button></div><button class="nmb" data-act="lobs" data-u="${l.u}"><span class="sl">${esc(l.s)}${l.bd&&l.bd!==S.did?` · <b class="byo">por ${esc(l.by||'outro celular')}</b>`:''}</span><span class="nm">${esc(l.n)}</span>${pend(l)>0?`<span class="kn">${pend(l)} p/ cozinha</span>`:isK(l)&&l.k?'<span class="ks">Na cozinha</span>':''}${l.o?`<span class="ob">${esc(l.o)}</span>`:'<span class="obh">+ observação</span>'}</button><div class="pr">${brl(l.p*l.q)}${l.q>1?`<small>${brl(l.p)} cada</small>`:''}</div></div>`).join(''):'';
   return head('Mesa '+cur,o?`Aberta às ${hhmm(o.t)} · ${ago(o.t)}`:'Livre',`<button class="ib" data-act="back" aria-label="Voltar para as mesas">${I.back}</button>`,o?`<button class="ib" data-act="more" aria-label="Mais opções">${I.more}</button>`:'')+
   `<div class="wrap">${o?`<div class="lines">${lines}</div>`:`<div class="empty"><div class="big">${cur}</div><p>Mesa livre. Toque em <b>Adicionar itens</b> para abrir a comanda.</p></div>`}</div>
   <div class="bar"><div class="wrap"><div class="tot"><div><span>Sem ${S.pct}%</span><b>${brl(s)}</b></div><div class="r"><span>Com ${S.pct}% do garçom</span><b class="hl">${brl(s+svc(s))}</b></div></div>
@@ -750,7 +762,9 @@ function reconcile(){if(!R)return;
     if(cfgN)note(0,'Cardápio e ajustes atualizados por outro celular')}
   firstLoad=false;const changed=sigS()!==sig0;save();
   if(changed)refreshUI();if(onlineNames().join()!==on0)liveUI()}
-function refreshUI(){render();
+const typing=()=>{const ae=document.activeElement;return !!(ae&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName)&&$('#app').contains(ae))};
+document.addEventListener('focusout',()=>{if(pendR)setTimeout(()=>{if(pendR&&!typing()){pendR=false;render()}},60)});
+function refreshUI(){if(typing())pendR=true;else render();
   if($('#pick').classList.contains('open')){if(S.orders[cur]||true){renderPick();pickBar()}}
   if($('#fech').classList.contains('open')){if(S.orders[cur])renderClose();else{$('#fech').classList.remove('open');lock();toast('Essa mesa foi fechada em outro celular')}}}
 function liveUI(){const b=$('#lvb');if(b)b.outerHTML=liveBadge();if(view==='sync'&&!$('#dlg').classList.contains('open')&&!(document.activeElement&&/INPUT|TEXTAREA/.test(document.activeElement.tagName)))render()}
@@ -820,7 +834,7 @@ function lvConnect(url,key,creator){LV={url,key,on:true,snd:LV.snd!==false};save
 /* ---- diálogos ---- */
 function obsDlg(k){const l=S.orders[cur].items[k];
   dlg(`<h2>${esc(l.n)}</h2><p>${esc(l.s)} · ${l.q}× ${brl(l.p)}</p><div class="fld"><label for="obsT">Observação para a cozinha</label><textarea id="obsT" data-focus>${esc(l.o)}</textarea></div><div class="qchips">${OBS.map(o=>`<button data-act="obsChip">${o}</button>`).join('')}</div>
-  <div class="edx"><button class="lnk bad" data-act="delLine" data-k="${k}">${I.trash} Tirar da comanda</button></div><div class="dbtn"><button class="btn gh" data-act="dlgNo">Cancelar</button><button class="btn pri" data-act="dlgOk">Salvar</button></div>`,
+  <div class="edx"><button class="lnk bad" data-act="delLine" data-u="${l.u}">${I.trash} Tirar da comanda</button></div><div class="dbtn"><button class="btn gh" data-act="dlgNo">Cancelar</button><button class="btn pri" data-act="dlgOk">Salvar</button></div>`,
   ()=>{const v=$('#obsT').value.trim();const o=S.orders[cur];if(v&&l.q>0){const same=o.items.find(x=>x!==l&&x.id===l.id&&x.o===v);if(same){same.q+=l.q;same.k=(same.k||0)+(l.k||0);same.ts=Date.now();rmLine(o,o.items.indexOf(l));o.cx=(o.cx||[]).filter(c=>!(c.n===l.n&&c.q===l.k&&c.o===l.o))}else{l.o=v;l.ts=Date.now()}}else{l.o=v;l.ts=Date.now()}save();render()})}
 function moveDlg(){const nums=[];for(let m=1;m<=Math.max(S.mesas,...Object.keys(S.orders).map(Number));m++)if(m!==cur)nums.push(m);
   dlg(`<h2>Trocar mesa ${cur}</h2><p>Escolha a mesa nova. Se ela já estiver aberta, as comandas são juntadas.</p><div class="pick">${nums.map(m=>`<button class="${S.orders[m]?'on':''}" data-act="moveTo" data-m="${m}">${m}${S.orders[m]?'<small>juntar</small>':''}</button>`).join('')}</div><div class="dbtn"><span></span><button class="btn gh" data-act="dlgNo">Cancelar</button></div>`)}
@@ -848,14 +862,14 @@ document.addEventListener('click',e=>{
   case 'mesa':cur=m;view='mesa';render();scrollTo(0,0);if(!S.orders[m])openPick();break;
   case 'back':view='mesas';cur=null;render();break;
   case 'addItems':openPick();break;
-  case 'linc':{const l=S.orders[cur].items[k];l.q++;l.ts=Date.now();save();render();break}
-  case 'ldec':{const o=S.orders[cur],l=o.items[k];snap();l.q--;l.ts=Date.now();if(l.q<=0){rmLine(o,k);tidy(cur);toast(l.n+' removido',true)}save();render();break}
-  case 'lobs':obsDlg(k);break;
+  case 'linc':{const o=S.orders[cur],l=o&&o.items.find(x=>x.u===b.dataset.u);if(!l){render();break}l.q++;l.ts=Date.now();save();render();break}
+  case 'ldec':{const o=S.orders[cur],k2=o?o.items.findIndex(x=>x.u===b.dataset.u):-1;if(k2<0){render();break}const l=o.items[k2];snap();l.q--;l.ts=Date.now();if(l.q<=0){rmLine(o,k2);tidy(cur);toast(l.n+' removido',true)}save();render();break}
+  case 'lobs':{const o=S.orders[cur],k2=o?o.items.findIndex(x=>x.u===b.dataset.u):-1;if(k2>=0)obsDlg(k2);else render();break}
   case 'obsChip':{const t=$('#obsT');t.value=t.value.trim()?t.value.trim()+', '+b.textContent.toLowerCase():b.textContent;break}
-  case 'delLine':{snap();const o=S.orders[cur],n=o.items[k].n;rmLine(o,k);tidy(cur);save();closeDlg();render();toast(n+' removido',true);break}
+  case 'delLine':{const o=S.orders[cur],k2=o?o.items.findIndex(x=>x.u===b.dataset.u):-1;if(k2<0){closeDlg();render();break}snap();const n=o.items[k2].n;rmLine(o,k2);tidy(cur);save();closeDlg();render();toast(n+' removido',true);break}
   case 'more':dlg(`<h2>Mesa ${cur}</h2><button class="opt" data-act="move">${I.swap} Trocar ou juntar mesa</button><button class="opt" data-act="kFull">Pedido completo para a cozinha</button><button class="opt" data-act="copyOpen">Copiar conta parcial</button><button class="opt bad" data-act="cancelOrder">${I.trash} Cancelar comanda inteira</button><div class="dbtn"><span></span><button class="btn gh" data-act="dlgNo">Fechar</button></div>`);break;
   case 'move':moveDlg();break;
-  case 'moveTo':{const o=S.orders[cur];if(!o)break;snap();ens(o);if(S.orders[m]){const t=S.orders[m];ens(t);t.items.push(...o.items);t.ali=[...new Set([...(t.ali||[]),...ids(o)])];t.del=Object.assign(t.del||{},o.del);if(o.cx)t.cx=(t.cx||[]).concat(o.cx);t.t=Math.min(t.t,o.t);t.mt=Date.now()}else{S.orders[m]=o;o.mt=Date.now()}delete S.orders[cur];const from=cur;cur=m;save();closeDlg();render();toast(`Mesa ${from} → mesa ${m}`,true);break}
+  case 'moveTo':{const o=S.orders[cur];if(!o)break;snap();ens(o);if(S.orders[m]){const t=S.orders[m];ens(t);t.items.push(...o.items);t.ali=[...new Set([...(t.ali||[]),...ids(o)])];t.del=Object.assign(t.del||{},o.del);if(o.cx)t.cx=(t.cx||[]).concat(o.cx);t.t=Math.min(t.t,o.t);t.mt=Date.now()}else{S.orders[m]=o;o.mt=Date.now()}delete S.orders[cur];const from=cur;cur=m;save();closeDlg();render();toast(`Mesa ${from} → mesa ${m}`,!LV.on);break}
   case 'kitchen':kitchenDlg(false);break;
   case 'ntGo':b.remove();if(m&&!$('#pick').classList.contains('open')&&!$('#fech').classList.contains('open')&&!$('#dlg').classList.contains('open')){cur=m;view='mesa';render();scrollTo(0,0)}break;
   case 'rulesCopy':copy(FB_RULES,'Regras','Regras copiadas');break;
@@ -938,9 +952,9 @@ document.addEventListener('click',e=>{
   case 'resetMenu':ask('Restaurar cardápio?','Volta o cardápio original com os preços da foto. Suas mudanças no cardápio são perdidas.','Restaurar',true,()=>{snap();S.menu=buildMenu();save();render();toast('Cardápio restaurado',true)});break;
   case 'bkCopy':copy(JSON.stringify(S),'Backup','Backup copiado');break;
   case 'bkLoad':dlg(`<h2>Restaurar backup</h2><p>Cole o texto do backup. Isso substitui tudo o que está no celular.</p><textarea class="cp" id="bkT" data-focus></textarea><p id="ferr" style="color:var(--bad)"></p><div class="dbtn"><button class="btn gh" data-act="dlgNo">Cancelar</button><button class="btn bad" data-act="dlgOk">Restaurar</button></div>`,()=>{try{const o=JSON.parse($('#bkT').value);if(!o||!Array.isArray(o.menu))throw 0;snap();const d0=S.did;S=Object.assign(defaults(),migrate(o));S.did=d0;touchCfg();save();render();toast('Backup restaurado',true)}catch(err){$('#ferr').textContent='Esse texto não é um backup válido.';return false}});break;
-  case 'dlgOk':if(D.ok&&D.ok()===false)break;closeDlg();break;
+  case 'dlgOk':{const sq=D.seq;if(D.ok&&D.ok()===false)break;if(D.seq===sq)closeDlg();break}
   case 'dlgNo':closeDlg();break;
-  case 'undo':if(undoSnap){S=JSON.parse(undoSnap);undoSnap=null;save();render();$('#toast').classList.remove('on')}break;
+  case 'undo':doUndo();break;
   }
 });
 document.addEventListener('change',e=>{const t=e.target;
@@ -964,7 +978,7 @@ document.addEventListener('input',e=>{if(e.target.id==='syIn')SY.code=e.target.v
 $('#q').addEventListener('input',()=>{renderPick();$('#pickBody').scrollTop=0});
 let rq=0;$('#pickBody').addEventListener('scroll',()=>{if(rq)return;rq=requestAnimationFrame(()=>{rq=0;activeChip()})},{passive:true});
 document.addEventListener('keydown',e=>{
-  if(e.key==='Enter'&&$('#gate').classList.contains('open')&&e.target.tagName==='INPUT'){e.preventDefault();gLogin(false);return}
+  if(e.key==='Enter'&&$('#gate').classList.contains('open')&&!$('#dlg').classList.contains('open')&&e.target.tagName==='INPUT'){e.preventDefault();gLogin(false);return}
   if(e.key==='Enter'&&$('#dlg').classList.contains('open')&&e.target.tagName==='INPUT'){e.preventDefault();const ok=$('#dlgBox [data-act="dlgOk"]');ok&&ok.click()}
   if(e.key==='Escape'){if($('#dlg').classList.contains('open'))closeDlg();else if($('#fech').classList.contains('open')){$('#fech').classList.remove('open');lock()}else if($('#pick').classList.contains('open'))closePick()}});
 if(LV.on&&LV.url&&LV.key)liveStart();
